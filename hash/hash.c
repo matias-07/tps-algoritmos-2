@@ -17,6 +17,20 @@ struct hash {
     hash_destruir_dato_t destruir_dato;
 };
 
+//Funcion de hashing
+
+unsigned long
+funcion_hash(unsigned char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+
 // PRIMITIVAS DEL CAMPO DE HASH
 
 hash_campo_t* hash_campo_crear(const char* clave, void* valor) {
@@ -53,7 +67,7 @@ hash_t* hash_crear(hash_destruir_dato_t destruir_dato) {
 }
 
 bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
-    size_t indice = funcion_hashing(clave) % hash->largo; // Falta agregar la función de hashing
+    size_t indice = funcion_hashing(clave) % hash->largo;
     lista_iter_t* iter = lista_iter_crear(hash->tabla[indice]);
     // Se recorre la lista; si la clave ya existe, sólo se reemplaza el valor
     while (!lista_iter_al_final(iter)) {
@@ -103,4 +117,37 @@ void* hash_obtener(const hash_t* hash, const char* clave) {
     }
     lista_iter_destruir(iter);
     return dato;
+}
+
+bool hash_pertenece(const hash_t *hash, const char *clave){
+    size_t indice = funcion_hashing(clave) % hash->largo;
+	bool pertenece = false;
+	lista_iter_t* iter = lista_iter_crear(hash->tabla[indice]);
+	while (!lista_iter_al_final(iter)) {
+		hash_campo_t* actual = lista_iter_ver_actual(iter);
+		if (strcmp(actual->clave, clave) == 0) {
+			pertenece = true;
+			break;
+		}
+	}
+	lista_iter_destruir(iter);
+	return pertenece;
+}
+
+size_t hash_cantidad(const hash_t *hash){
+	return hash->cantidad;
+}
+
+void hash_destruir(hash_t *hash){
+	for (size_t i=0; i<(hash->cantidad); i++){
+		//size_t indice = obtener_balde_con_lista_no_vacia;
+		while (!lista_esta_vacia(hash->tabla[indice])){
+			void* borrado = lista_borrar_primero(hash->tabla[indice]);
+			if (!(hash->destruir_dato)){
+				hash->destruir_dato(borrado);
+			}
+			hash_campo_destruir((hash_campo_t*) borrado); //casteo el campo borrado de void* a hash_campo_t*
+		}
+	free(hash->tabla);		
+	free(hash);	
 }
