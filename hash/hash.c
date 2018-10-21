@@ -5,6 +5,8 @@
 #include "lista.h"
 #include "hash.h"
 #define LARGO_INICIAL 17
+#define CONDICION_REDIM 1/2
+#define FACTOR_REDIM 2
 
 typedef struct hash_campo {
     char* clave;
@@ -89,6 +91,8 @@ bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
     if (!campo) return false;
     lista_insertar_ultimo(hash->tabla[indice], campo);
     hash->cantidad++;
+    size_t factor_carga = (hash->cantidad)/(hash->largo);
+    if(factor_carga > CONDICION_REDIM) redimensionar(hash);
     return true;
 }
 
@@ -148,29 +152,33 @@ size_t hash_cantidad(const hash_t *hash){
 
 void hash_destruir(hash_t *hash){
 	for (size_t i=0; i < hash->largo; i++){
-        // Acá si la lista está vacía, no entra al while
-        // (de esta forma no hace falta verificar que la posición del hash
-        // tenga algo)
         while (!lista_esta_vacia(hash->tabla[i])) {
             hash_campo_t* campo = lista_borrar_primero(hash->tabla[i]);
-            free(campo->clave);
             if (hash->destruir_dato)
                 hash->destruir_dato(campo->valor);
-            free(campo);
+            hash_campo_destruir(campo);
         }
         lista_destruir(hash->tabla[i], NULL);
-		//size_t indice = obtener_balde_con_lista_no_vacia;
-		/*while (!lista_esta_vacia(hash->tabla[indice])){
-			void* borrado = lista_borrar_primero(hash->tabla[indice]);
-			if (!(hash->destruir_dato)){
-				hash->destruir_dato(borrado);
-			}
-			hash_campo_destruir((hash_campo_t*) borrado); //casteo el campo borrado de void* a hash_campo_t*
-		}*/
     }
 	free(hash->tabla);
 	free(hash);
 }
+
+void redimensionar(hash_t* hash){
+    hash_t* hash_nuevo = malloc(sizeof(hash_t));
+    if (!hash_nuevo) return NULL;
+    hash_nuevo->tabla = malloc(FACTOR_REDIM * sizeof(lista_t*));
+    if (!hash_nuevo->tabla) {
+        free(hash_nuevo);
+        return NULL;
+    }
+    
+    //Guardar todos los elementos devuelta? No cuesta mucho?
+    
+    hash_nuevo->cantidad = hash->cantidad;
+    hash_nuevo->largo = FACTOR_REDIM*(hash->largo);
+    hash_nuevo->destruir_dato = hash->destruir_dato;
+    return hash_nuevo;
 
 /******************************************************************************
  *                         PRIMITIVAS DEL ITERADOR
