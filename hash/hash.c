@@ -92,7 +92,10 @@ bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
     lista_insertar_ultimo(hash->tabla[indice], campo);
     hash->cantidad++;
     size_t factor_carga = (hash->cantidad)/(hash->largo);
-    if(factor_carga > CONDICION_REDIM) redimensionar(hash);
+    if(factor_carga > CONDICION_REDIM){
+		bool redim_bien = redimensionar(hash);
+		if(!redim_bien) return false;
+	}
     return true;
 }
 
@@ -166,19 +169,30 @@ void hash_destruir(hash_t *hash){
 
 void redimensionar(hash_t* hash){
     hash_t* hash_nuevo = malloc(sizeof(hash_t));
-    if (!hash_nuevo) return NULL;
+    if (!hash_nuevo) return false;
     hash_nuevo->tabla = malloc(FACTOR_REDIM * sizeof(lista_t*));
     if (!hash_nuevo->tabla) {
         free(hash_nuevo);
-        return NULL;
+        return false;
     }
-    
-    //Guardar todos los elementos devuelta? No cuesta mucho?
-    
-    hash_nuevo->cantidad = hash->cantidad;
     hash_nuevo->largo = FACTOR_REDIM*(hash->largo);
     hash_nuevo->destruir_dato = hash->destruir_dato;
-    return hash_nuevo;
+    for (size_t i=0; i < hash->largo; i++){
+        while (!lista_esta_vacia(hash->tabla[i])) {
+            hash_campo_t* campo = lista_borrar_primero(hash->tabla[i]);
+			bool guarda_bien = hash_guardar(hash_nuevo, campo->clave, campo->valor);
+			if(!guarda_bien){
+				hash_destruir(hash_nuevo);
+				return false;
+			}
+			hash_campo_destruir(campo);
+		}
+		lista_destruir(hash->tabla[i], NULL);
+	}
+	hash->tabla = hash_nuevo->tabla;
+	free(hash_nuevo);
+    
+    return true;
 
 /******************************************************************************
  *                         PRIMITIVAS DEL ITERADOR
