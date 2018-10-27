@@ -7,7 +7,7 @@
 
 #define LARGO_INICIAL 7
 #define CARGA_MAX 1.75
-#define CARGA_MIN 0.25
+#define CARGA_MIN 0.12
 #define FACTOR_REDIM 2
 
 typedef struct hash_campo {
@@ -87,7 +87,7 @@ bool redimensionar(hash_t* hash, size_t nuevo_largo){
     return true;
 }
 
-hash_campo_t* buscar_campo(const hash_t* hash, const char* clave) {
+hash_campo_t* buscar_campo(const hash_t* hash, const char* clave, bool borrar) {
     size_t indice = funcion_hash(clave, hash->largo);
     hash_campo_t* campo = NULL;
     lista_iter_t* iter = lista_iter_crear(hash->tabla[indice]);
@@ -95,6 +95,7 @@ hash_campo_t* buscar_campo(const hash_t* hash, const char* clave) {
         hash_campo_t* actual = lista_iter_ver_actual(iter);
         if (strcmp(actual->clave, clave) == 0) {
             campo = actual;
+            if (borrar) lista_iter_borrar(iter);
             break;
         }
         lista_iter_avanzar(iter);
@@ -133,7 +134,7 @@ bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
             return false;
     }
     size_t indice = funcion_hash(clave, hash->largo);
-    hash_campo_t* campo = buscar_campo(hash, clave);
+    hash_campo_t* campo = buscar_campo(hash, clave, false);
     if (campo != NULL) {
         if (hash->destruir_dato)
             hash->destruir_dato(campo->valor);
@@ -152,31 +153,22 @@ void* hash_borrar(hash_t* hash, const char* clave) {
         if (!redimensionar(hash, hash->largo/FACTOR_REDIM))
             return NULL;
     }
-    size_t indice = funcion_hash(clave, hash->largo);
-    void* dato = NULL;
-    lista_iter_t* iter = lista_iter_crear(hash->tabla[indice]);
-    while (!lista_iter_al_final(iter)) {
-        hash_campo_t* actual = lista_iter_ver_actual(iter);
-        if (strcmp(actual->clave, clave) == 0) {
-            dato = actual->valor;
-            hash_campo_destruir(lista_iter_borrar(iter));
-            hash->cantidad--;
-            break;
-        }
-        lista_iter_avanzar(iter);
-    }
-    lista_iter_destruir(iter);
+    hash_campo_t* campo = buscar_campo(hash, clave, true);
+    if (!campo) return NULL;
+    hash->cantidad--;
+    void* dato = campo->valor;
+    hash_campo_destruir(campo);
     return dato;
 }
 
 void* hash_obtener(const hash_t* hash, const char* clave) {
-    hash_campo_t* campo = buscar_campo(hash, clave);
+    hash_campo_t* campo = buscar_campo(hash, clave, false);
     if (!campo) return NULL;
     return campo->valor;
 }
 
 bool hash_pertenece(const hash_t *hash, const char *clave){
-    return buscar_campo(hash, clave) != NULL;
+    return buscar_campo(hash, clave, false) != NULL;
 }
 
 size_t hash_cantidad(const hash_t *hash){
