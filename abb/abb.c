@@ -20,6 +20,8 @@ typedef struct abb{
 	size_t cantidad;
 } abb_t;
 
+/*Funciones auxiliares*/
+
 abb_nodo_t* nodo_crear(char* clave, void* dato){
 	abb_nodo_t* nodo = malloc(sizeof(abb_nodo_t));
 	if (!nodo) return NULL;
@@ -39,10 +41,28 @@ abb_nodo_t* abb_nodo_buscar(abb_t* arbol, abb_nodo_t* nodo, char* clave){
 		return abb_nodo_buscar(arbol, nodo->izq, clave);
 }
 
+abb_nodo_t* abb_buscar_padre(abb_t* arbol, abb_nodo_t* nodo, char* clave){
+	if (nodo == NULL) return NULL;
+	if (arbol->cmp(nodo->clave, clave) < 0){
+		if (nodo->der != NULL)
+			return abb_buscar_padre(arbol, nodo->der, clave);
+	if (arbol->cmp(nodo->clave, clave) > 0)
+		if (nodo->izq != NULL)
+			return abb_buscar_padre(arbol, nodo->izq, clave);
+	return nodo;
+}
+
 void nodo_destruir(abb_nodo_t* nodo, abb_destruir_dato_t destruir_dato){
 	if (destruir_dato != NULL)
 		destruir_dato(nodo->dato);
 	free(nodo);
+}
+
+void _abb_destruir(abb_nodo_t* nodo, abb_destruir_dato_t destruir_dato){
+	if (!nodo) return;
+	_abb_destruir(nodo->izq, destruir_dato);	
+	_abb_destruir(nodo->der, destruir_dato);	
+	nodo_destruir(nodo, destruir_dato);
 }
 
 /*Primitivas del ABB*/
@@ -72,21 +92,26 @@ size_t abb_cantidad(abb_t* arbol){
 }
 
 bool abb_guardar(abb_t* arbol, const char* clave, void* dato){
+	if (abb_pertenece(arbol, clave)) return false;
 	char* clave_dup = strdup(clave);
 	abb_nodo_t* nodo = nodo_crear(clave_dup, dato);
 	if (!nodo) return false;
 	if(abb_cantidad(arbol) == 0){
 		arbol->raiz = nodo;
-		arbol->cantidad++;
-		return true;
 	}
-	//Casos mas dificiles
+	abb_nodo_t* padre = abb_buscar_padre(arbol, arbol->raiz, clave);
+	if (arbol->cmp(padre->clave, clave) < 0)
+		padre->der = nodo;
+	if (arbol->cmp(padre->clave, clave) > 0)
+		padre->izq = nodo;
+	arbol->cantidad++;
+	return true;
 }
 
-
-
-
-
+void abb_destruir(abb_t* arbol){
+	_abb_destruir(arbol->raiz, arbol->destruir_dato);
+	free(arbol);
+}
 
 
 
