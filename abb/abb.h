@@ -4,6 +4,7 @@
 /******************************************************************************
  *                        ÁRBOL BINARIO DE BÚSQUEDA
  *****************************************************************************/
+struct abb;
 
 typedef struct abb abb_t;
 
@@ -61,6 +62,8 @@ void abb_in_order(abb_t* arbol, bool visitar(const char*, void*, void*), void* e
 /******************************************************************************
  *                            ITERADOR EXTERNO
  *****************************************************************************/
+
+struct abb_iter;
 
 typedef struct abb_iter abb_iter_t;
 
