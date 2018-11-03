@@ -3,6 +3,7 @@
 
 #define CAPACIDAD_INICIAL 10
 #define FACTOR_REDIMENSION 2
+#define COND_ACHICAR 4
 
 struct heap {
 	void** datos;
@@ -39,7 +40,7 @@ void upheap(heap_t* heap, size_t pos) {
 	if (heap->cmp(heap->datos[padre], heap->datos[pos]) > 0)
 		return;
 	swap(heap->datos, padre, pos);
-	upheap(heap, pos);
+	upheap(heap, padre);
 }
 
 void downheap(heap_t* heap, size_t pos){
@@ -48,12 +49,23 @@ void downheap(heap_t* heap, size_t pos){
 	size_t izq = obtener_hijo_izq(pos);
 	size_t der = obtener_hijo_der(pos);
 	if (izq < heap->cantidad && heap->cmp(array[izq], array[maximo]) > 0)
-		maximo = izq
+		maximo = izq;
 	if (der < heap->cantidad && heap->cmp(array[der], array[maximo]) > 0)
-		maximo = der
+		maximo = der;
 	if (maximo == pos) return;
 	swap(array, pos, maximo);
-	downheap(heap, pos);
+	downheap(heap, maximo);
+}
+
+bool heap_redimensionar(heap_t* heap, size_t nueva_capacidad){
+	void** datos_redim = malloc(nueva_capacidad*sizeof(void*));
+	if (!datos_redim) return false;
+	for(size_t i=0; i<heap->cantidad; i++){
+		datos_redim[i] = heap->datos[i];
+	}
+	heap->datos = datos_redim;
+	heap->capacidad = nueva_capacidad;
+	return true;
 }
 
 /******************************************************************************
@@ -116,6 +128,10 @@ void* heap_desencolar(heap_t* heap){
 	swap(heap->datos, 0, heap->cantidad-1);
 	downheap(heap, 0);
 	heap->cantidad--;
+	if (COND_ACHICAR*heap->cantidad == heap->capacidad){
+		if (!heap_redimensionar(heap, heap->cantidad/FACTOR_REDIMENSION))
+			return false;
+	}
 	return desencolado;
 }
 
