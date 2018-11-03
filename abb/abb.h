@@ -26,6 +26,10 @@ abb_t* abb_crear(abb_comparar_clave_t cmp, abb_destruir_dato_t destruir_dato);
  */
 bool abb_guardar(abb_t* arbol, const char* clave, void* dato);
 
+/* Borra del abb el dato asociado a la clave y lo devuelve.
+ * Pre: El abb fue creado.
+ * Post: Se devolvió el dato o NULL si éste no se encontraba.
+ */
 void* abb_borrar(abb_t* arbol, const char* clave);
 
 /* Devuelve el dato del abb asociado a la clave pasada
@@ -67,12 +71,35 @@ struct abb_iter;
 
 typedef struct abb_iter abb_iter_t;
 
+/* Crea un iterador in-order del abb pasado por
+ * parámetro.
+ * Pre: El abb fue creado.
+ * Post: Se devolvió un iterador en la primera posición
+ * del abb.*/
 abb_iter_t* abb_iter_in_crear(const abb_t* arbol);
 
+/* Avanza el iterador.
+ * Pre: El iterador fue creado.
+ * Post: Devuelve true si avanzó o false en caso
+ * de estar al final.
+ */
 bool abb_iter_in_avanzar(abb_iter_t* iter);
 
+/* Devuelve la clave actual.
+ * Pre: El iterador fue creado.
+ * Post: Se devolvió la clave actual o NULL si
+ * el iterador está al final.
+ */
 const char* abb_iter_in_ver_actual(const abb_iter_t* iter);
 
+/* Devuelve true si el iterador está al final
+ * o false en caso contrario.
+ * Pre: El iterador fue creado.
+ */
 bool abb_iter_in_al_final(const abb_iter_t* iter);
 
+/* Destruye el iterador.
+ * Pre: El iterador fue creado.
+ * Post: El iterador fue destruido.
+ */
 void abb_iter_in_destruir(abb_iter_t* iter);

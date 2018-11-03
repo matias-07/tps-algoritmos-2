@@ -26,6 +26,9 @@ struct abb_iter {
  *                         FUNCIONES AUXILIARES
  *****************************************************************************/
 
+/* Busca el nodo asociado con la clave en el abb
+ * y lo devuelve.
+ */
 abb_nodo_t* abb_nodo_buscar(const abb_t* arbol, abb_nodo_t* raiz, const char* clave) {
     if (!raiz) return NULL;
     if (!raiz->clave) return NULL;
@@ -36,6 +39,9 @@ abb_nodo_t* abb_nodo_buscar(const abb_t* arbol, abb_nodo_t* raiz, const char* cl
     return abb_nodo_buscar(arbol, raiz->der, clave);
 }
 
+/* Busca el padre del nodo pasado en el abb y
+ * lo devuelve.
+ */
 abb_nodo_t* abb_buscar_padre(const abb_t* arbol, abb_nodo_t* raiz, abb_nodo_t* nodo) {
     if (!raiz) return NULL;
     if (raiz == nodo) return NULL;
@@ -46,6 +52,8 @@ abb_nodo_t* abb_buscar_padre(const abb_t* arbol, abb_nodo_t* raiz, abb_nodo_t* n
     return abb_buscar_padre(arbol, raiz->der, nodo);
 }
 
+/* Intercambia los pares (clave, dato) entre dos nodos.
+ */
 void intercambiar_datos(abb_nodo_t* a, abb_nodo_t* b) {
     char* clave_aux = a->clave;
     void* dato_aux = a->dato;
@@ -55,16 +63,24 @@ void intercambiar_datos(abb_nodo_t* a, abb_nodo_t* b) {
     b->dato = dato_aux;
 }
 
+/* Devuelve el nodo menor del abb.
+ */
 abb_nodo_t* abb_obtener_menor(abb_nodo_t* raiz) {
     if (!raiz->izq) return raiz;
     return abb_obtener_menor(raiz->izq);
 }
 
+/* Devuelve el siguiente nodo in-order de la raiz
+ * pasada por parámetro.
+ */
 abb_nodo_t* abb_obtener_siguiente(abb_nodo_t* raiz) {
     if (!raiz->der) return NULL;
     return abb_obtener_menor(raiz->der);
 }
 
+/* Recibe un nodo y cambia su hijo por el nuevo pasado
+ * por parámetro.
+ */
 void cambiar_nodo(abb_nodo_t* padre, abb_nodo_t* hijo, abb_nodo_t* nuevo) {
     if (!padre) return;
     if (padre->izq == hijo)
@@ -75,6 +91,8 @@ void cambiar_nodo(abb_nodo_t* padre, abb_nodo_t* hijo, abb_nodo_t* nuevo) {
 
 /* Primitivas del nodo */
 
+/* Crea un nodo.
+ */
 abb_nodo_t* nodo_crear(void){
     abb_nodo_t* nodo = malloc(sizeof(abb_nodo_t));
     if (!nodo) return NULL;
@@ -85,12 +103,18 @@ abb_nodo_t* nodo_crear(void){
     return nodo;
 }
 
+/* Guarda en el nodo la clave y el dato.
+ */
 bool nodo_guardar(abb_nodo_t* nodo, const char* clave, void* dato) {
     nodo->clave = strdup(clave);
     nodo->dato = dato;
     return true;
 }
 
+/* Destruye el nodo.
+ * Si se recibe una función de destrucción, la aplica
+ * a su dato.
+ */
 void nodo_destruir(abb_nodo_t* nodo, abb_destruir_dato_t destruir_dato){
     free(nodo->clave);
     if (destruir_dato != NULL)
@@ -231,7 +255,7 @@ void abb_in_order(abb_t* arbol, bool visitar(const char*, void*, void*), void* e
  *                    PRIMITIVAS DEL ITERADOR EXTERNO
  *****************************************************************************/
 
-/* Función auxiliar */
+/* Función auxiliar. */
 void apilar_izquierdos(pila_t* pila, abb_nodo_t* nodo) {
     if (!nodo) return;
     if (!nodo->clave) return;
