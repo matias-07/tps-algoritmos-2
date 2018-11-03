@@ -24,7 +24,7 @@ size_t obtener_hijo_izq(size_t pos) {
 }
 
 size_t obtener_hijo_der(size_t pos) {
-	return 2 * pos - 1;
+	return 2 * pos + 2;
 }
 
 void swap(void** arreglo, size_t a, size_t b) {
@@ -39,7 +39,21 @@ void upheap(heap_t* heap, size_t pos) {
 	if (heap->cmp(heap->datos[padre], heap->datos[pos]) > 0)
 		return;
 	swap(heap->datos, padre, pos);
-	upheap(heap, padre);
+	upheap(heap, pos);
+}
+
+void downheap(heap_t* heap, size_t pos){
+	void** array = heap->datos;
+	size_t maximo = pos;
+	size_t izq = obtener_hijo_izq(pos);
+	size_t der = obtener_hijo_der(pos);
+	if (izq < heap->cantidad && heap->cmp(array[izq], array[maximo]) > 0)
+		maximo = izq
+	if (der < heap->cantidad && heap->cmp(array[der], array[maximo]) > 0)
+		maximo = der
+	if (maximo == pos) return;
+	swap(array, pos, maximo);
+	downheap(heap, pos);
 }
 
 /******************************************************************************
@@ -71,3 +85,37 @@ bool heap_encolar(heap_t* heap, void* elem) {
 	heap->cantidad++;
 	return true;
 }
+
+size_t heap_cantidad(const heap_t* heap){
+	return heap->cantidad;
+}
+
+bool heap_esta_vacio(const heap_t* heap){
+	return heap->cantidad == 0;
+}
+
+void heap_destruir(heap_t* heap, void destruir_elemento(void* e)){
+	if (destruir_elemento){
+		for(size_t i=0; i<(heap->cantidad); i++){
+			destruir_elemento(heap->datos[i]);
+		}	
+	}
+	free(heap->datos);
+	free(heap);
+}
+
+void* heap_ver_max(const heap_t* heap){
+	if (heap_esta_vacio(heap)) return NULL;
+	return heap->datos[0];
+}
+
+void* heap_desencolar(heap_t* heap){
+	if (heap_esta_vacio(heap)) return NULL;
+	void* desencolado = heap_ver_max(heap);
+	heap->datos[0] = NULL;
+	swap(heap->datos, 0, heap->cantidad-1);
+	downheap(heap, 0);
+	heap->cantidad--;
+	return desencolado;
+}
+
