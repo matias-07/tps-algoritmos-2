@@ -34,36 +34,38 @@ void swap(void** arreglo, size_t a, size_t b) {
 	arreglo[b] = aux;
 }
 
-void upheap(heap_t* heap, size_t pos) {
+void upheap(void* arreglo[], size_t pos, cmp_func_t cmp) {
 	if (pos == 0) return;
 	size_t padre = obtener_padre(pos);
-	if (heap->cmp(heap->datos[padre], heap->datos[pos]) > 0)
+	if (cmp(arreglo[padre], arreglo[pos]) > 0)
 		return;
-	swap(heap->datos, padre, pos);
-	upheap(heap, padre);
+	swap(arreglo, padre, pos);
+	upheap(arreglo, padre, cmp);
 }
 
-void downheap(heap_t* heap, size_t pos){
-	void** array = heap->datos;
+void downheap(void* arreglo[], size_t n, size_t pos, cmp_func_t cmp) {
 	size_t maximo = pos;
 	size_t izq = obtener_hijo_izq(pos);
 	size_t der = obtener_hijo_der(pos);
-	if (izq < heap->cantidad && heap->cmp(array[izq], array[maximo]) > 0)
+	if (izq < n && cmp(arreglo[izq], arreglo[maximo]) > 0)
 		maximo = izq;
-	if (der < heap->cantidad && heap->cmp(array[der], array[maximo]) > 0)
+	if (der < n && cmp(arreglo[der], arreglo[maximo]) > 0)
 		maximo = der;
 	if (maximo == pos) return;
-	swap(array, pos, maximo);
-	downheap(heap, maximo);
+	swap(arreglo, pos, maximo);
+	downheap(arreglo, n, maximo, cmp);
 }
 
-bool heap_redimensionar(heap_t* heap, size_t nueva_capacidad){
-	void** datos_redim = malloc(nueva_capacidad*sizeof(void*));
-	if (!datos_redim) return false;
-	for(size_t i=0; i<heap->cantidad; i++){
-		datos_redim[i] = heap->datos[i];
+void heapify(void* arreglo[], size_t n, cmp_func_t cmp) {
+	for (size_t i = n; i > 0; i--) {
+		downheap(arreglo, n, i-1, cmp);
 	}
-	heap->datos = datos_redim;
+}
+
+bool heap_redimensionar(heap_t* heap, size_t nueva_capacidad) {
+	void** datos_nuevo = realloc(heap->datos, nueva_capacidad * sizeof(void*));
+	if (!datos_nuevo) return false;
+	heap->datos = datos_nuevo;
 	heap->capacidad = nueva_capacidad;
 	return true;
 }
@@ -86,6 +88,17 @@ heap_t* heap_crear(cmp_func_t cmp) {
 	return heap;
 }
 
+heap_t* heap_crear_arr(void* arreglo[], size_t n, cmp_func_t cmp) {
+	heap_t* heap = malloc(sizeof(heap_t));
+	if (!heap) return NULL;
+	heapify(arreglo, n, cmp);
+	heap->datos = arreglo;
+	heap->capacidad = n;
+	heap->cantidad = n;
+	heap->cmp = cmp;
+	return heap;
+}
+
 bool heap_encolar(heap_t* heap, void* elem) {
 	if (!elem) return false;
 	if (heap->cantidad == heap->capacidad) {
@@ -93,7 +106,7 @@ bool heap_encolar(heap_t* heap, void* elem) {
 			return false;
 	}
 	heap->datos[heap->cantidad] = elem;
-	upheap(heap, heap->cantidad);
+	upheap(heap->datos, heap->cantidad, heap->cmp);
 	heap->cantidad++;
 	return true;
 }
@@ -123,11 +136,11 @@ void* heap_ver_max(const heap_t* heap){
 
 void* heap_desencolar(heap_t* heap){
 	if (heap_esta_vacio(heap)) return NULL;
-	void* desencolado = heap_ver_max(heap);
+	void* desencolado = heap->datos[0];
 	heap->datos[0] = NULL;
 	swap(heap->datos, 0, heap->cantidad-1);
-	downheap(heap, 0);
 	heap->cantidad--;
+	downheap(heap->datos, heap->cantidad, 0, heap->cmp);
 	if (COND_ACHICAR*heap->cantidad == heap->capacidad){
 		if (!heap_redimensionar(heap, heap->cantidad/FACTOR_REDIMENSION))
 			return false;
@@ -135,3 +148,9 @@ void* heap_desencolar(heap_t* heap){
 	return desencolado;
 }
 
+void heap_sort(void* arreglo[], size_t n, cmp_func_t cmp) {
+	for (size_t i = n; i > 1; i--) {
+		heapify(arreglo, i, cmp);
+		swap(arreglo, 0, i-1);
+	}
+}
