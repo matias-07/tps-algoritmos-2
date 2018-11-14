@@ -79,13 +79,19 @@ sistema_t* sistema_crear(void) {
 }
 
 bool sistema_agregar_vuelo(sistema_t* sistema, vuelo_t* vuelo) {
-	hash_guardar(sistema->hash, vuelo->codigo, vuelo);
-	abb_guardar(sistema->abb, vuelo->hora, vuelo);
-	return true;
+	return (abb_guardar(sistema->abb, vuelo->hora, vuelo) && hash_guardar(sistema->hash, vuelo->codigo, vuelo));
 }
 
 vuelo_t* sistema_ver_vuelo(const sistema_t* sistema, const char* codigo) {
 	return hash_obtener(sistema->hash, codigo);
+}
+
+vuelo_t** sistema_ver_tablero(sistema_t* sistema, int cant_vuelos, char* modo, char* fecha_desde, char* fecha_hasta){ 
+	//Se me ocurrio iterar en el abb hasta encontrar una fecha mayor a fecha_desde, y ahi ir agregando k vuelos hasta fecha_hasta
+	//segun asc o desc, pero para eso deberiamos recorrer (en el caso, que sean los ultimos vuelos) practicamente todo el abb
+	//y no seria O(log(v)) sino 0(v) aprox, y eso seria para mostrar unos pocos K ubicados al final.
+
+	//Como hacer para que el orden sea O(log(v)) en casos promedio?
 }
 
 heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
@@ -108,6 +114,14 @@ heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	}
 	hash_iter_destruir(iter);
 	return heap;
+}
+
+vuelo_t** sistema_borrar(sistema_t* sistema, char* fecha_desde, char* fecha_hasta){
+	//Parecido a ver_tablero, ya que abb_borrar es O(log(v)), para que el algoritmo sea O(K*log(v)) no deberiamos hacer mas que
+	//aplicar el borrado K veces, pero para deberiamos saber cuales son las fechas dentro del rango, y para eso solo se me ocurre
+	//recorrer el abb comparando, y eso terminaria siendo en el peor caso O(v), entonces si me dan dos fechas entre las cuales hay 3
+	//en el medio (K=3), pero estan al final, habria que recorrer el arbol dandome O(v) en lugar de O(3*log(v))
+
 }
 
 void sistema_destruir(sistema_t* sistema) {
