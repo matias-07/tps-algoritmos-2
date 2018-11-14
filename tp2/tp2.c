@@ -16,8 +16,7 @@ vuelo_t* procesar_linea(char* linea) {
 	char* codigo = datos[CODIGO];
 	int prioridad = atoi(datos[PRIORIDAD]);
 	char* hora = datos[HORA];
-	char* info = linea;
-	vuelo_t* vuelo = vuelo_crear(codigo, prioridad, hora, info);
+	vuelo_t* vuelo = vuelo_crear(codigo, prioridad, hora, datos);
 	free_strv(datos);
 	return vuelo;
 }
@@ -27,7 +26,10 @@ bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	if (!archivo) return false;
 	char* linea = NULL;
 	size_t tam = 0;
-	while (getline(&linea, &tam, archivo) > 0) {
+	size_t cant;
+	while ((cant = getline(&linea, &tam, archivo)) != EOF) {
+		if (linea[cant-1] == '\n')
+			linea[cant-1] = '\0';
 		vuelo_t* vuelo = procesar_linea(linea);
 		sistema_agregar_vuelo(sistema, vuelo);
 	}
@@ -62,7 +64,21 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	vuelo_t* vuelo = sistema_ver_vuelo(sistema, comando[1]);
 	if (!vuelo) return false;
-	printf("%s\n", vuelo_obtener_info(vuelo));
+	printf("%s\n", vuelo_info(vuelo));
+	return true;
+}
+
+bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
+	if (strspn(comando[1], "0123456789") != strlen(comando[1]))
+		return false; // Si k no es un número
+	heap_t* heap = sistema_prioridades(sistema, atoi(comando[1]));
+	while (!heap_esta_vacio(heap)) {
+		vuelo_t* vuelo = heap_desencolar(heap);
+		printf("%d - %s\n", vuelo_prioridad(vuelo), vuelo_codigo(vuelo));
+	}
+	// En la página dice que las prioridades tienen que ser impresas de
+	// mayor a menor, así que hay que invertir esto
+	heap_destruir(heap, NULL);
 	return true;
 }
 
@@ -99,6 +115,7 @@ int main(void) {
 			fprintf(stderr, "Error en comando %s\n", entrada);
 		}
 	}
+	free(entrada);
 	sistema_destruir(sistema);
 	return 0;
 }
