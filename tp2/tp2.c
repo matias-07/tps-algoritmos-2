@@ -4,7 +4,6 @@
 #include <string.h>
 #include "strutil.h"
 #include "sistema.h"
-#include "vuelo.h"
 #include "pila.h"
 
 // Posiciones de cada dato en el csv
@@ -39,7 +38,7 @@ bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
-void imprimir_tablero(vuelo_t** vuelos_tablero){
+/*void imprimir_tablero(vuelo_t** vuelos_tablero){
 	for(size_t i=0; vuelos_tablero[i]!=NULL; i++){
 		printf("%s - %s\n", vuelos_tablero[i][HORA], vuelos_tablero[i][CODIGO]);
 		vuelo_destruir(vuelos_tablero[i]);
@@ -56,7 +55,7 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 	if (strcmp(fecha_hasta, fecha_desde) < 0) return false;
 	vuelo_t** vuelos_tablero = sistema_ver_tablero(sistema, cant_vuelos, modo, fecha_desde, fecha_hasta);
 	imprimir_tablero(vuelos_tablero);
-}
+}*/
 
 bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	vuelo_t* vuelo = sistema_ver_vuelo(sistema, comando[1]);
@@ -67,7 +66,7 @@ bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 
 bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	if (strspn(comando[1], "0123456789") != strlen(comando[1]))
-		return false; // Si k no es un número
+		return false;
 	heap_t* heap = sistema_prioridades(sistema, atoi(comando[1]));
 	pila_t* pila = pila_crear();
 	while (!heap_esta_vacio(heap)) {
@@ -82,15 +81,16 @@ bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
-bool borrar(sistema_t* sistema, char* comando[]){
-	char* fecha_desde = comando[1];
-	char* fecha_hasta = comando[2];
-	if (strcmp(fecha_hasta, fecha_desde) < 0) return false;
-	vuelo_t** vuelos_borrados = sistema_borrar(sistema, fecha_desde, fecha_hasta);
-	for(size_t i=0; vuelos_borrados[i]!=NULL; i++){
-		printf("%s\n", vuelo_info(vuelo[i]));
-		vuelo_destruir(vuelo[i]);
+bool borrar(sistema_t* sistema, char* comando[]) {
+	if (strcmp(comando[1], comando[2]) > 0)
+		return false;
+	lista_t* eliminados = sistema_borrar(sistema, comando[1], comando[2]);
+	while (!lista_esta_vacia(eliminados)) {
+		vuelo_t* vuelo = lista_borrar_primero(eliminados);
+		printf("%s\n", vuelo_info(vuelo));
+		vuelo_destruir(vuelo);
 	}
+	return true;
 }
 
 bool procesar_comando(sistema_t* sistema, char* entrada) {
@@ -99,8 +99,8 @@ bool procesar_comando(sistema_t* sistema, char* entrada) {
 	char** comando = split(entrada, ' ');
 	if (strcmp(comando[0], "agregar_archivo") == 0)
 		ok = agregar_archivo(sistema, comando);
-	else if (strcmp(comando[0], "ver_tablero") == 0)
-		ok = ver_tablero(sistema, comando);
+	/*else if (strcmp(comando[0], "ver_tablero") == 0)
+		ok = ver_tablero(sistema, comando);*/
 	else if (strcmp(comando[0], "info_vuelo") == 0)
 		ok = info_vuelo(sistema, comando);
 	else if (strcmp(comando[0], "prioridad_vuelos") == 0)
@@ -118,7 +118,7 @@ int main(void) {
 	size_t tam = 0;
 	size_t cant;
 	while ((cant = getline(&entrada, &tam, stdin)) != EOF) {
-		if (entrada[cant-1] == '\n') // Agrego esto porque getline da problemas si hay un \n al final
+		if (entrada[cant-1] == '\n')
 			entrada[cant-1] = '\0';
 		if (procesar_comando(sistema, entrada)) {
 			printf("OK\n");
