@@ -76,7 +76,7 @@ typedef struct abb_iter abb_iter_t;
  * Pre: El abb fue creado.
  * Post: Se devolvió un iterador en la primera posición
  * del abb.*/
-abb_iter_t* abb_iter_in_crear(const abb_t* arbol);
+abb_iter_t* abb_iter_in_crear(const abb_t* arbol, char* inicio, char* fin);
 
 /* Avanza el iterador.
  * Pre: El iterador fue creado.
@@ -90,7 +90,7 @@ bool abb_iter_in_avanzar(abb_iter_t* iter);
  * Post: Se devolvió la clave actual o NULL si
  * el iterador está al final.
  */
-const char* abb_iter_in_ver_actual(const abb_iter_t* iter);
+void* abb_iter_in_ver_actual(const abb_iter_t* iter);
 
 /* Devuelve true si el iterador está al final
  * o false en caso contrario.

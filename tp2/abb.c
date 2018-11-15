@@ -20,24 +20,13 @@ struct abb {
 
 struct abb_iter {
     pila_t* pila;
+    const abb_t* arbol;
+    char* fin;
 };
 
 /******************************************************************************
  *                         FUNCIONES AUXILIARES
  *****************************************************************************/
-
-/* Busca el nodo asociado con la clave en el abb
- * y lo devuelve.
- */
-abb_nodo_t* abb_nodo_buscar(const abb_t* arbol, abb_nodo_t* raiz, const char* clave) {
-    if (!raiz) return NULL;
-    if (!raiz->clave) return NULL;
-    if (arbol->cmp(raiz->clave, clave) == 0)
-        return raiz;
-    if (arbol->cmp(raiz->clave, clave) > 0)
-        return abb_nodo_buscar(arbol, raiz->izq, clave);
-    return abb_nodo_buscar(arbol, raiz->der, clave);
-}
 
 /* Busca el padre del nodo pasado en el abb y
  * lo devuelve.
@@ -50,6 +39,23 @@ abb_nodo_t* abb_buscar_padre(const abb_t* arbol, abb_nodo_t* raiz, abb_nodo_t* n
     if (arbol->cmp(raiz->clave, nodo->clave) > 0)
         return abb_buscar_padre(arbol, raiz->izq, nodo);
     return abb_buscar_padre(arbol, raiz->der, nodo);
+}
+
+/* Busca el nodo asociado con la clave en el abb
+ * y lo devuelve.
+ */
+abb_nodo_t* abb_nodo_buscar(const abb_t* arbol, abb_nodo_t* raiz, const char* clave) {
+    if (!raiz) return NULL;
+    if (!raiz->clave) return NULL;
+    if (arbol->cmp(raiz->clave, clave) == 0)
+        return raiz;
+    if (arbol->cmp(raiz->clave, clave) > 0) {
+        if (!raiz->izq) return raiz;
+        return abb_nodo_buscar(arbol, raiz->izq, clave);
+    }
+    if (!raiz->der) return abb_buscar_padre(arbol, arbol->raiz, raiz);
+    return abb_nodo_buscar(arbol, raiz->der, clave);
+    // Si no encuentra el nodo, devuelve el siguiente.
 }
 
 /* Intercambia los pares (clave, dato) entre dos nodos.
@@ -93,7 +99,7 @@ void cambiar_nodo(abb_nodo_t* padre, abb_nodo_t* hijo, abb_nodo_t* nuevo) {
 
 /* Crea un nodo.
  */
-abb_nodo_t* nodo_crear(void){
+abb_nodo_t* abb_nodo_crear(void){
     abb_nodo_t* nodo = malloc(sizeof(abb_nodo_t));
     if (!nodo) return NULL;
     nodo->izq = NULL;
@@ -156,13 +162,13 @@ bool _abb_guardar(abb_t* arbol, abb_nodo_t* nodo, const char* clave, void* dato)
     }
     if (arbol->cmp(nodo->clave, clave) > 0) {
         if (!nodo->izq) {
-            nodo->izq = nodo_crear();
+            nodo->izq = abb_nodo_crear();
             if (!nodo->izq) return false;
         }
         return _abb_guardar(arbol, nodo->izq, clave, dato);
     }
     if (!nodo->der) {
-        nodo->der = nodo_crear();
+        nodo->der = abb_nodo_crear();
         if (!nodo->der) return false;
     }
     return _abb_guardar(arbol, nodo->der, clave, dato);
@@ -170,7 +176,7 @@ bool _abb_guardar(abb_t* arbol, abb_nodo_t* nodo, const char* clave, void* dato)
 
 bool abb_guardar(abb_t* arbol, const char* clave, void* dato) {
     if (!arbol->raiz) {
-        arbol->raiz = nodo_crear();
+        arbol->raiz = abb_nodo_crear();
         if (!arbol->raiz)
             return false;
         if (!nodo_guardar(arbol->raiz, clave, dato))
@@ -256,32 +262,36 @@ void abb_in_order(abb_t* arbol, bool visitar(const char*, void*, void*), void* e
  *****************************************************************************/
 
 /* Función auxiliar. */
-void apilar_izquierdos(pila_t* pila, abb_nodo_t* nodo) {
+void apilar_izquierdos(pila_t* pila, const abb_t* arbol, abb_nodo_t* nodo, char* fin) {
     if (!nodo) return;
     if (!nodo->clave) return;
+    if (arbol->cmp(nodo->clave, fin) > 0) return;
     pila_apilar(pila, nodo);
-    apilar_izquierdos(pila, nodo->izq);
+    apilar_izquierdos(pila, arbol, nodo->izq, fin);
 }
 
-abb_iter_t* abb_iter_in_crear(const abb_t* arbol) {
+abb_iter_t* abb_iter_in_crear(const abb_t* arbol, char* inicio, char* fin) {
     abb_iter_t* iter = malloc(sizeof(abb_iter_t));
     if (!iter) return NULL;
     iter->pila = pila_crear();
-    apilar_izquierdos(iter->pila, arbol->raiz);
+    iter->arbol = arbol;
+    iter->fin = strdup(fin);
+    abb_nodo_t* raiz = abb_nodo_buscar(arbol, arbol->raiz, inicio);
+    apilar_izquierdos(iter->pila, arbol, raiz, fin);
     return iter;
 }
 
 bool abb_iter_in_avanzar(abb_iter_t* iter) {
     if (abb_iter_in_al_final(iter)) return false;
     abb_nodo_t* desapilado = pila_desapilar(iter->pila);
-    apilar_izquierdos(iter->pila, desapilado->der);
+    apilar_izquierdos(iter->pila, iter->arbol, desapilado->der, iter->fin);
     return true;
 }
 
-const char* abb_iter_in_ver_actual(const abb_iter_t* iter) {
+void* abb_iter_in_ver_actual(const abb_iter_t* iter) {
     abb_nodo_t* actual = pila_ver_tope(iter->pila);
     if (!actual) return NULL;
-    return actual->clave;
+    return actual->dato;
 }
 
 bool abb_iter_in_al_final(const abb_iter_t* iter) {
@@ -290,5 +300,6 @@ bool abb_iter_in_al_final(const abb_iter_t* iter) {
 
 void abb_iter_in_destruir(abb_iter_t* iter) {
     pila_destruir(iter->pila);
+    free(iter->fin);
     free(iter);
 }

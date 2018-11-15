@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "heap.h"
+#include "lista.h"
 
 /* Definicion de estructuras de los tda vuelo y sistema*/
 
@@ -28,6 +29,10 @@ int vuelo_prioridad(const vuelo_t* vuelo);
 //Pre: el vuelo fue creado.
 const char* vuelo_info(const vuelo_t* vuelo);
 
+const char* vuelo_hora(const vuelo_t* vuelo);
+
+void vuelo_destruir(void* vuelo);
+
 /* Primitivas del tda sistema */
 
 //Crea un sistema, el cual contiene la informacion
@@ -48,6 +53,8 @@ vuelo_t* sistema_ver_vuelo(const sistema_t* sistema, const char* codigo);
 //vuelos con mas prioridad.
 //Pre: el sistema fue creado
 heap_t* sistema_prioridades(const sistema_t* sistema, int k);
+
+lista_t* sistema_borrar(sistema_t* sistema, char* desde, char* hasta);
 
 //Recibe un sistema por parámetro y lo destruye.
 //Pre: el sistema fue creado.

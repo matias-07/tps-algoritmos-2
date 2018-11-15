@@ -75,7 +75,7 @@ void tabla_destruir(lista_t** tabla, size_t largo, hash_t* nuevo_hash) {
     free(tabla);
 }
 
-bool redimensionar(hash_t* hash, size_t nuevo_largo){
+bool hash_redimensionar(hash_t* hash, size_t nuevo_largo){
     lista_t** tabla_anterior = hash->tabla;
     size_t largo_anterior = hash->largo;
     hash->tabla = malloc(nuevo_largo * sizeof(lista_t*));
@@ -130,7 +130,7 @@ hash_t* hash_crear(hash_destruir_dato_t destruir_dato) {
 
 bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
     if (hash_carga(hash) > CARGA_MAX) {
-        if (!redimensionar(hash, hash->largo*FACTOR_REDIM))
+        if (!hash_redimensionar(hash, hash->largo*FACTOR_REDIM))
             return false;
     }
     size_t indice = funcion_hash(clave, hash->largo);
@@ -150,7 +150,7 @@ bool hash_guardar(hash_t* hash, const char* clave, void* dato) {
 
 void* hash_borrar(hash_t* hash, const char* clave) {
     if (hash_carga(hash) < CARGA_MIN && hash->largo > LARGO_INICIAL) {
-        if (!redimensionar(hash, hash->largo/FACTOR_REDIM))
+        if (!hash_redimensionar(hash, hash->largo/FACTOR_REDIM))
             return NULL;
     }
     hash_campo_t* campo = buscar_campo(hash, clave, true);

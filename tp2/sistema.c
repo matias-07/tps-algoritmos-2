@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "strutil.h"
@@ -20,7 +21,7 @@ struct vuelo{
 /* Primitivas del TDA vuelo */
 
 vuelo_t* vuelo_crear(char* codigo, int prioridad, char* hora, char* datos[]){
-	vuelo_t* vuelo = malloc(vuelo_t);
+	vuelo_t* vuelo = malloc(sizeof(vuelo_t));
 	if (!vuelo) return NULL;
 	vuelo->codigo = strdup(codigo);
 	vuelo->prioridad = prioridad;
@@ -29,12 +30,16 @@ vuelo_t* vuelo_crear(char* codigo, int prioridad, char* hora, char* datos[]){
 	return vuelo;
 }
 
-const char* vuelo_info(vuelo_t* vuelo){
+const char* vuelo_info(const vuelo_t* vuelo) {
 	return vuelo->info;
 }
 
 const char* vuelo_codigo(const vuelo_t* vuelo) {
 	return vuelo->codigo;
+}
+
+const char* vuelo_hora(const vuelo_t* vuelo) {
+	return vuelo->hora;
 }
 
 int vuelo_prioridad(const vuelo_t* vuelo) {
@@ -48,9 +53,6 @@ void vuelo_destruir(void* vuelo) {
 	free(vuelo);
 }
 
-// La función de comparación está invertida para que el heap
-// funcione como un heap de mínimos, pero capaz sería mejor modificar
-// directamente el heap para que quede más claro
 int vuelocmp(const void* a, const void* b) {
 	if (((vuelo_t*)a)->prioridad > ((vuelo_t*)b)->prioridad)
 		return -1;
@@ -79,20 +81,15 @@ sistema_t* sistema_crear(void) {
 }
 
 bool sistema_agregar_vuelo(sistema_t* sistema, vuelo_t* vuelo) {
-	return (abb_guardar(sistema->abb, vuelo->hora, vuelo) && hash_guardar(sistema->hash, vuelo->codigo, vuelo));
+	return abb_guardar(sistema->abb, vuelo->hora, vuelo) && hash_guardar(sistema->hash, vuelo->codigo, vuelo);
 }
 
 vuelo_t* sistema_ver_vuelo(const sistema_t* sistema, const char* codigo) {
 	return hash_obtener(sistema->hash, codigo);
 }
 
-vuelo_t** sistema_ver_tablero(sistema_t* sistema, int cant_vuelos, char* modo, char* fecha_desde, char* fecha_hasta){ 
-	//Se me ocurrio iterar en el abb hasta encontrar una fecha mayor a fecha_desde, y ahi ir agregando k vuelos hasta fecha_hasta
-	//segun asc o desc, pero para eso deberiamos recorrer (en el caso, que sean los ultimos vuelos) practicamente todo el abb
-	//y no seria O(log(v)) sino 0(v) aprox, y eso seria para mostrar unos pocos K ubicados al final.
-
-	//Como hacer para que el orden sea O(log(v)) en casos promedio?
-}
+/*vuelo_t** sistema_ver_tablero(sistema_t* sistema, int k, char* modo, char* desde, char* hasta){
+}*/
 
 heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	heap_t* heap = heap_crear(vuelocmp);
@@ -116,12 +113,28 @@ heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	return heap;
 }
 
-vuelo_t** sistema_borrar(sistema_t* sistema, char* fecha_desde, char* fecha_hasta){
-	//Parecido a ver_tablero, ya que abb_borrar es O(log(v)), para que el algoritmo sea O(K*log(v)) no deberiamos hacer mas que
-	//aplicar el borrado K veces, pero para deberiamos saber cuales son las fechas dentro del rango, y para eso solo se me ocurre
-	//recorrer el abb comparando, y eso terminaria siendo en el peor caso O(v), entonces si me dan dos fechas entre las cuales hay 3
-	//en el medio (K=3), pero estan al final, habria que recorrer el arbol dandome O(v) en lugar de O(3*log(v))
+lista_t* sistema_obtener_vuelos(sistema_t* sistema, char* desde, char* hasta) {
+	lista_t* vuelos = lista_crear();
+	abb_iter_t* iter = abb_iter_in_crear(sistema->abb, desde, hasta);
+	while (!abb_iter_in_al_final(iter)) {
+		lista_insertar_ultimo(vuelos, abb_iter_in_ver_actual(iter));
+		abb_iter_in_avanzar(iter);
+	}
+	abb_iter_in_destruir(iter);
+	return vuelos;
+}
 
+lista_t* sistema_borrar(sistema_t* sistema, char* desde, char* hasta){
+	lista_t* vuelos = sistema_obtener_vuelos(sistema, desde, hasta);
+	lista_iter_t* iter = lista_iter_crear(vuelos);
+	while (!lista_iter_al_final(iter)) {
+		vuelo_t* vuelo = lista_iter_ver_actual(iter);
+		hash_borrar(sistema->hash, vuelo_codigo(vuelo));
+		abb_borrar(sistema->abb, vuelo_hora(vuelo));
+		lista_iter_avanzar(iter);
+	}
+	lista_iter_destruir(iter);
+	return vuelos;
 }
 
 void sistema_destruir(sistema_t* sistema) {
