@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "abb.h"
 #include "pila.h"
@@ -21,6 +22,7 @@ struct abb {
 struct abb_iter {
     pila_t* pila;
     const abb_t* arbol;
+    char* inicio;
     char* fin;
 };
 
@@ -50,12 +52,9 @@ abb_nodo_t* abb_nodo_buscar(const abb_t* arbol, abb_nodo_t* raiz, const char* cl
     if (arbol->cmp(raiz->clave, clave) == 0)
         return raiz;
     if (arbol->cmp(raiz->clave, clave) > 0) {
-        if (!raiz->izq) return raiz;
         return abb_nodo_buscar(arbol, raiz->izq, clave);
     }
-    if (!raiz->der) return abb_buscar_padre(arbol, arbol->raiz, raiz);
     return abb_nodo_buscar(arbol, raiz->der, clave);
-    // Si no encuentra el nodo, devuelve el siguiente.
 }
 
 /* Intercambia los pares (clave, dato) entre dos nodos.
@@ -262,12 +261,16 @@ void abb_in_order(abb_t* arbol, bool visitar(const char*, void*, void*), void* e
  *****************************************************************************/
 
 /* Función auxiliar. */
-void apilar_izquierdos(pila_t* pila, const abb_t* arbol, abb_nodo_t* nodo, char* fin) {
+void apilar_izquierdos(pila_t* pila, const abb_t* arbol, abb_nodo_t* nodo, char* inicio, char* fin) {
     if (!nodo) return;
     if (!nodo->clave) return;
-    if (arbol->cmp(nodo->clave, fin) > 0) return;
-    pila_apilar(pila, nodo);
-    apilar_izquierdos(pila, arbol, nodo->izq, fin);
+    if (arbol->cmp(nodo->clave, inicio) < 0) {
+        apilar_izquierdos(pila, arbol, nodo->der, inicio, fin);
+        return;
+    }
+    if (arbol->cmp(nodo->clave, fin) <= 0)
+        pila_apilar(pila, nodo);
+    apilar_izquierdos(pila, arbol, nodo->izq, inicio, fin);
 }
 
 abb_iter_t* abb_iter_in_crear(const abb_t* arbol, char* inicio, char* fin) {
@@ -275,16 +278,16 @@ abb_iter_t* abb_iter_in_crear(const abb_t* arbol, char* inicio, char* fin) {
     if (!iter) return NULL;
     iter->pila = pila_crear();
     iter->arbol = arbol;
+    iter->inicio = strdup(inicio);
     iter->fin = strdup(fin);
-    abb_nodo_t* raiz = abb_nodo_buscar(arbol, arbol->raiz, inicio);
-    apilar_izquierdos(iter->pila, arbol, raiz, fin);
+    apilar_izquierdos(iter->pila, arbol, arbol->raiz, inicio, fin);
     return iter;
 }
 
 bool abb_iter_in_avanzar(abb_iter_t* iter) {
     if (abb_iter_in_al_final(iter)) return false;
     abb_nodo_t* desapilado = pila_desapilar(iter->pila);
-    apilar_izquierdos(iter->pila, iter->arbol, desapilado->der, iter->fin);
+    apilar_izquierdos(iter->pila, iter->arbol, desapilado->der, iter->inicio, iter->fin);
     return true;
 }
 
@@ -300,6 +303,7 @@ bool abb_iter_in_al_final(const abb_iter_t* iter) {
 
 void abb_iter_in_destruir(abb_iter_t* iter) {
     pila_destruir(iter->pila);
+    free(iter->inicio);
     free(iter->fin);
     free(iter);
 }
