@@ -59,8 +59,8 @@ int vuelocmp(const void* a, const void* b) {
 	if (((vuelo_t*)a)->prioridad < ((vuelo_t*)b)->prioridad)
 		return 1;
 	if (strcmp(((vuelo_t*)a)->codigo, ((vuelo_t*)b)->codigo) > 0)
-		return -1;
-	return 1;
+		return 1;
+	return -1;
 }
 
 /* Definición del TDA sistema */
@@ -88,8 +88,36 @@ vuelo_t* sistema_ver_vuelo(const sistema_t* sistema, const char* codigo) {
 	return hash_obtener(sistema->hash, codigo);
 }
 
-/*vuelo_t** sistema_ver_tablero(sistema_t* sistema, int k, char* modo, char* desde, char* hasta){
-}*/
+lista_t* sistema_obtener_vuelos(sistema_t* sistema, char* desde, char* hasta, char* modo) {
+	lista_t* vuelos = lista_crear();
+	abb_iter_t* iter = abb_iter_in_crear(sistema->abb, desde, hasta);
+	while (!abb_iter_in_al_final(iter)) {
+		if (strcmp(modo, "desc")){
+			lista_insertar_ultimo(vuelos, abb_iter_in_ver_actual(iter));
+		} else {
+			lista_insertar_primero(vuelos, abb_iter_in_ver_actual(iter));
+		}
+		abb_iter_in_avanzar(iter);
+	}
+	abb_iter_in_destruir(iter);
+	return vuelos;
+}
+
+lista_t* sistema_ver_tablero(sistema_t* sistema, int k, char* modo, char* desde, char* hasta){
+	lista_t* vuelos = sistema_obtener_vuelos(sistema, desde, hasta, modo);
+	lista_t* vuelos_tablero = lista_crear();
+	lista_iter_t* iter = lista_iter_crear(vuelos);
+	int cont = 0;
+	while(!lista_iter_al_final(iter)){
+		lista_insertar_ultimo(vuelos_tablero, lista_iter_ver_actual(iter));
+		lista_iter_avanzar(iter);
+		cont++;
+		if (cont >= k) break;
+	}
+	lista_destruir(vuelos, NULL);
+	lista_iter_destruir(iter);
+	return vuelos_tablero;
+}
 
 heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	heap_t* heap = heap_crear(vuelocmp);
@@ -113,19 +141,8 @@ heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	return heap;
 }
 
-lista_t* sistema_obtener_vuelos(sistema_t* sistema, char* desde, char* hasta) {
-	lista_t* vuelos = lista_crear();
-	abb_iter_t* iter = abb_iter_in_crear(sistema->abb, desde, hasta);
-	while (!abb_iter_in_al_final(iter)) {
-		lista_insertar_ultimo(vuelos, abb_iter_in_ver_actual(iter));
-		abb_iter_in_avanzar(iter);
-	}
-	abb_iter_in_destruir(iter);
-	return vuelos;
-}
-
 lista_t* sistema_borrar(sistema_t* sistema, char* desde, char* hasta){
-	lista_t* vuelos = sistema_obtener_vuelos(sistema, desde, hasta);
+	lista_t* vuelos = sistema_obtener_vuelos(sistema, desde, hasta, "desc");
 	lista_iter_t* iter = lista_iter_crear(vuelos);
 	while (!lista_iter_al_final(iter)) {
 		vuelo_t* vuelo = lista_iter_ver_actual(iter);
