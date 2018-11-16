@@ -22,6 +22,7 @@ vuelo_t* procesar_linea(char* linea) {
 }
 
 bool agregar_archivo(sistema_t* sistema, char* comando[]) {
+	if (!comando[1]) return false;
 	FILE* archivo = fopen(comando[1], "r");
 	if (!archivo) return false;
 	char* linea = NULL;
@@ -39,6 +40,8 @@ bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 }
 
 bool ver_tablero(sistema_t* sistema, char* comando[]){
+	if (!comando[1] || !comando[2] || !comando[3] || !comando[4])
+		return false;
 	int cant_vuelos = atoi(comando[1]);
 	if (cant_vuelos < 1) return false;
 	char* modo = comando[2];
@@ -56,6 +59,7 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 }
 
 bool info_vuelo(const sistema_t* sistema, char* comando[]) {
+	if (!comando[1]) return false;
 	vuelo_t* vuelo = sistema_ver_vuelo(sistema, comando[1]);
 	if (!vuelo) return false;
 	printf("%s\n", vuelo_info(vuelo));
@@ -63,6 +67,7 @@ bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 }
 
 bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
+	if (!comando[1]) return false;
 	if (strspn(comando[1], "0123456789") != strlen(comando[1]))
 		return false;
 	heap_t* heap = sistema_prioridades(sistema, atoi(comando[1]));
@@ -80,6 +85,7 @@ bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 }
 
 bool borrar(sistema_t* sistema, char* comando[]) {
+	if (!comando[1] || !comando[2]) return false;
 	if (strcmp(comando[1], comando[2]) > 0)
 		return false;
 	lista_t* eliminados = sistema_borrar(sistema, comando[1], comando[2]);
@@ -88,6 +94,7 @@ bool borrar(sistema_t* sistema, char* comando[]) {
 		printf("%s\n", vuelo_info(vuelo));
 		vuelo_destruir(vuelo);
 	}
+	lista_destruir(eliminados, NULL);
 	return true;
 }
 
