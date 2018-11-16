@@ -90,6 +90,7 @@ bool borrar(sistema_t* sistema, char* comando[]) {
 		printf("%s\n", vuelo_info(vuelo));
 		vuelo_destruir(vuelo);
 	}
+	lista_destruir(eliminados, NULL);
 	return true;
 }
 
