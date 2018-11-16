@@ -11,6 +11,11 @@
 #define PRIORIDAD 5
 #define HORA 6
 
+/* Funciones auxiliares */
+
+
+//Procesa la informacion de cada linea, creando un vuelo a partir de la informacion necesaria.
+//Devuelve el vuelo conteniendo la informacion correspondiente.
 vuelo_t* procesar_linea(char* linea) {
 	char** datos = split(linea, ',');
 	char* codigo = datos[CODIGO];
@@ -21,6 +26,9 @@ vuelo_t* procesar_linea(char* linea) {
 	return vuelo;
 }
 
+//Procesa el archivo ingresado y guarda la informacion de los vuelos en el sistema
+//llamando a su primitiva agregar_vuelo del sistema para cada linea.
+//Devuelve un booleano según si hubo un error de comando o no.
 bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
 	FILE* archivo = fopen(comando[1], "r");
@@ -39,6 +47,9 @@ bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
+//Muestra por pantalla el tablero con los vuelos correspondiente a las condiciones ingresadas por comando
+//llamando a su primitiva ver_tablero del sistema.
+//Devuelve un booleano según si hubo un error de comando o no.
 bool ver_tablero(sistema_t* sistema, char* comando[]){
 	if (!comando[1] || !comando[2] || !comando[3] || !comando[4])
 		return false;
@@ -58,6 +69,9 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 	return true;
 }
 
+//Muestra por pantalla la informacion del vuelo correspondiente al codigo de vuelo ingresado
+//llamando a su primitiva ver_vuelo del sistema.
+//Devuelve un booleano según si hubo un error de comando o no.
 bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
 	vuelo_t* vuelo = sistema_ver_vuelo(sistema, comando[1]);
@@ -66,6 +80,8 @@ bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
+//Muestra por pantalla los k vuelos con mayor prioridad llamando a su primitiva prioridades del sistema
+//Devuelve un booleano según si hubo un error de comando o no.
 bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
 	if (strspn(comando[1], "0123456789") != strlen(comando[1]))
@@ -84,6 +100,9 @@ bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
+//Se encarga del borrado de los vuelos llamando a su primitiva borrar del sistema
+//Imprime por pantalla la informacion de los vuelos borrados del sistema
+//Devuelve un booleano según si hubo un error de comando o no.
 bool borrar(sistema_t* sistema, char* comando[]) {
 	if (!comando[1] || !comando[2]) return false;
 	if (strcmp(comando[1], comando[2]) > 0)
@@ -98,6 +117,8 @@ bool borrar(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
+//Redirecciona el programa según el comando ingresado, a la funcion correspondiente
+//Devuelve un booleano según si hubo un error de comando o no.
 bool procesar_comando(sistema_t* sistema, char* entrada) {
 	if (!entrada) return false;
 	bool ok = false;

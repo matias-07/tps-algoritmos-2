@@ -74,8 +74,8 @@ typedef struct abb_iter abb_iter_t;
 /* Crea un iterador in-order del abb pasado por
  * parámetro.
  * Pre: El abb fue creado.
- * Post: Se devolvió un iterador en la primera posición
- * del abb.*/
+ * Post: Se devolvió un iterador en la posición de la clave inicio, o en caso
+ * de que no este en el abb, la proxima clave mas cercana.*/
 abb_iter_t* abb_iter_in_crear(const abb_t* arbol, char* inicio, char* fin);
 
 /* Avanza el iterador.
