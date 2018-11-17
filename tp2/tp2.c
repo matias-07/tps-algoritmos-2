@@ -13,8 +13,8 @@
 
 /* Funciones auxiliares */
 
-
-//Procesa la informacion de cada linea, creando un vuelo a partir de la informacion necesaria.
+//Procesa la informacion de cada linea, creando un vuelo a partir
+//de la informacion necesaria.
 //Devuelve el vuelo conteniendo la informacion correspondiente.
 vuelo_t* procesar_linea(char* linea) {
 	char** datos = split(linea, ',');
@@ -26,8 +26,8 @@ vuelo_t* procesar_linea(char* linea) {
 	return vuelo;
 }
 
-//Procesa el archivo ingresado y guarda la informacion de los vuelos en el sistema
-//llamando a su primitiva agregar_vuelo del sistema para cada linea.
+//Procesa el archivo ingresado y guarda la informacion de los vuelos en el
+//sistema llamando a su primitiva agregar_vuelo del sistema para cada linea.
 //Devuelve un booleano según si hubo un error de comando o no.
 bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
@@ -47,8 +47,8 @@ bool agregar_archivo(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
-//Muestra por pantalla el tablero con los vuelos correspondiente a las condiciones ingresadas por comando
-//llamando a su primitiva ver_tablero del sistema.
+//Muestra por pantalla el tablero con los vuelos correspondiente
+//a las condiciones ingresadas por comando.
 //Devuelve un booleano según si hubo un error de comando o no.
 bool ver_tablero(sistema_t* sistema, char* comando[]){
 	if (!comando[1] || !comando[2] || !comando[3] || !comando[4])
@@ -69,8 +69,8 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 	return true;
 }
 
-//Muestra por pantalla la informacion del vuelo correspondiente al codigo de vuelo ingresado
-//llamando a su primitiva ver_vuelo del sistema.
+//Muestra por pantalla la informacion del vuelo correspondiente
+//al codigo de vuelo ingresado.
 //Devuelve un booleano según si hubo un error de comando o no.
 bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
@@ -80,7 +80,7 @@ bool info_vuelo(const sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
-//Muestra por pantalla los k vuelos con mayor prioridad llamando a su primitiva prioridades del sistema
+//Muestra por pantalla los k vuelos con mayor prioridad.
 //Devuelve un booleano según si hubo un error de comando o no.
 bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	if (!comando[1]) return false;
@@ -100,18 +100,18 @@ bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 	return true;
 }
 
-//Se encarga del borrado de los vuelos llamando a su primitiva borrar del sistema
-//Imprime por pantalla la informacion de los vuelos borrados del sistema
+//Se encarga del borrado de los vuelos.
+//Imprime por pantalla la informacion de los vuelos borrados del sistema.
 //Devuelve un booleano según si hubo un error de comando o no.
 bool borrar(sistema_t* sistema, char* comando[]) {
 	if (!comando[1] || !comando[2]) return false;
 	if (strcmp(comando[1], comando[2]) > 0)
 		return false;
-	lista_t* eliminados = sistema_borrar(sistema, comando[1], comando[2]);
+	lista_t* eliminados = sistema_obtener_vuelos(sistema, comando[1], comando[2], "desc");
 	while (!lista_esta_vacia(eliminados)) {
 		vuelo_t* vuelo = lista_borrar_primero(eliminados);
 		printf("%s\n", vuelo_info(vuelo));
-		vuelo_destruir(vuelo);
+		sistema_eliminar_vuelo(sistema, vuelo);
 	}
 	lista_destruir(eliminados, NULL);
 	return true;

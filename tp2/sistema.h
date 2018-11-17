@@ -64,10 +64,15 @@ lista_t* sistema_ver_tablero(sistema_t* sistema, int k, char* modo, char* desde,
 //Pre: el sistema fue creado
 heap_t* sistema_prioridades(const sistema_t* sistema, int k);
 
-//Recibe por parámetro un sistema, y unas fechas desde y hasta.
-//Borra del sistema todos los vuelos correspondiente a ese intervalo de fechas.
+//Recibe por parámetro un sistema, fechas desde y hasta, y un modo,
+//que determina el orden -ascendente o descendente- de los vuelos.
+//Devuelve una lista con todos los vuelos correspondiente a ese intervalo de fechas.
 //Pre: el sistema fue creado.
-lista_t* sistema_borrar(sistema_t* sistema, char* desde, char* hasta);
+lista_t* sistema_obtener_vuelos(sistema_t* sistema, char* desde, char* hasta, char* modo);
+
+//Recibe un sistema y un vuelo, y lo elimina del sistema.
+//Pre: el sistema fue creado.
+void sistema_eliminar_vuelo(sistema_t* sistema, vuelo_t* vuelo);
 
 //Recibe un sistema por parámetro y lo destruye.
 //Pre: el sistema fue creado.

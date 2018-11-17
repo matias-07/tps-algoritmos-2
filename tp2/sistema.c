@@ -81,7 +81,10 @@ sistema_t* sistema_crear(void) {
 }
 
 bool sistema_agregar_vuelo(sistema_t* sistema, vuelo_t* vuelo) {
-	return abb_guardar(sistema->abb, vuelo->hora, vuelo) && hash_guardar(sistema->hash, vuelo->codigo, vuelo);
+	vuelo_t* duplicado = sistema_ver_vuelo(sistema, vuelo_codigo(vuelo));
+	if (duplicado != NULL)
+		abb_borrar(sistema->abb, vuelo_hora(duplicado));
+	return hash_guardar(sistema->hash, vuelo->codigo, vuelo) && abb_guardar(sistema->abb, vuelo->hora, vuelo);
 }
 
 vuelo_t* sistema_ver_vuelo(const sistema_t* sistema, const char* codigo) {
@@ -101,6 +104,12 @@ lista_t* sistema_obtener_vuelos(sistema_t* sistema, char* desde, char* hasta, ch
 	}
 	abb_iter_in_destruir(iter);
 	return vuelos;
+}
+
+void sistema_eliminar_vuelo(sistema_t* sistema, vuelo_t* vuelo) {
+	abb_borrar(sistema->abb, vuelo_hora(vuelo));
+	vuelo_t* a_eliminar = hash_borrar(sistema->hash, vuelo_codigo(vuelo));
+	vuelo_destruir(a_eliminar);
 }
 
 lista_t* sistema_ver_tablero(sistema_t* sistema, int k, char* modo, char* desde, char* hasta){
@@ -139,19 +148,6 @@ heap_t* sistema_prioridades(const sistema_t* sistema, int k) {
 	}
 	hash_iter_destruir(iter);
 	return heap;
-}
-
-lista_t* sistema_borrar(sistema_t* sistema, char* desde, char* hasta){
-	lista_t* vuelos = sistema_obtener_vuelos(sistema, desde, hasta, "desc");
-	lista_iter_t* iter = lista_iter_crear(vuelos);
-	while (!lista_iter_al_final(iter)) {
-		vuelo_t* vuelo = lista_iter_ver_actual(iter);
-		hash_borrar(sistema->hash, vuelo_codigo(vuelo));
-		abb_borrar(sistema->abb, vuelo_hora(vuelo));
-		lista_iter_avanzar(iter);
-	}
-	lista_iter_destruir(iter);
-	return vuelos;
 }
 
 void sistema_destruir(sistema_t* sistema) {
