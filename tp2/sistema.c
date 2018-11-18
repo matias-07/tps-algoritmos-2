@@ -18,6 +18,29 @@ struct vuelo{
 	char* info;
 };
 
+//Funcion auxiliar, crea la clave del vuelo para el abb
+char* crear_clave_abb(char* codigo, char* hora){
+	size_t len_hora = strlen(hora);
+	size_t len_clave_abb = len_hora + strlen(codigo)+4;
+	char* clave_abb = malloc(len_clave_abb*sizeof(char));
+	size_t pos;
+	for(pos=0; pos<len_hora; pos++){
+		clave_abb[pos] = hora[pos];
+	}
+	clave_abb[pos] = ' ';
+	pos++;
+	clave_abb[pos] = '-';
+	pos++;
+	clave_abb[pos] = ' ';
+	pos++;
+	for(size_t i=0; pos<len_clave_abb; i++){
+		clave_abb[pos] = codigo[i];
+		pos++;
+	}
+	clave_abb[len_clave_abb-1] = '\0';
+	return clave_abb;
+}
+
 /* Primitivas del TDA vuelo */
 
 vuelo_t* vuelo_crear(char* codigo, int prioridad, char* hora, char* datos[]){
@@ -25,7 +48,7 @@ vuelo_t* vuelo_crear(char* codigo, int prioridad, char* hora, char* datos[]){
 	if (!vuelo) return NULL;
 	vuelo->codigo = strdup(codigo);
 	vuelo->prioridad = prioridad;
-	vuelo->hora = strdup(hora);
+	vuelo->hora = crear_clave_abb(codigo, hora);
 	vuelo->info = join(datos, ' ');
 	return vuelo;
 }

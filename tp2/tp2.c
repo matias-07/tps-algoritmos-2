@@ -70,7 +70,7 @@ bool ver_tablero(sistema_t* sistema, char* comando[]){
 	lista_t* vuelos_tablero = sistema_ver_tablero(sistema, cant_vuelos, modo, fecha_desde, fecha_hasta);
 	while (!lista_esta_vacia(vuelos_tablero)){
 		vuelo_t* vuelo = lista_borrar_primero(vuelos_tablero);
-		printf("%s - %s\n", vuelo_hora(vuelo), vuelo_codigo(vuelo));
+		printf("%s\n", vuelo_hora(vuelo));
 	}
 	lista_destruir(vuelos_tablero, NULL);
 	return true;
@@ -111,7 +111,7 @@ bool prioridad_vuelos(sistema_t* sistema, char* comando[]) {
 bool borrar(sistema_t* sistema, char* comando[]) {
 	if (strcmp(comando[1], comando[2]) > 0)
 		return false;
-	lista_t* eliminados = sistema_obtener_vuelos(sistema, comando[1], comando[2], "desc");
+	lista_t* eliminados = sistema_obtener_vuelos(sistema, comando[1], comando[2], "asc");
 	while (!lista_esta_vacia(eliminados)) {
 		vuelo_t* vuelo = lista_borrar_primero(eliminados);
 		printf("%s\n", vuelo_info(vuelo));
@@ -123,10 +123,8 @@ bool borrar(sistema_t* sistema, char* comando[]) {
 
 //Redirecciona el programa según el comando ingresado, a la funcion correspondiente
 //Devuelve un booleano según si hubo un error de comando o no.
-bool procesar_comando(sistema_t* sistema, char* entrada) {
-	if (!entrada) return false;
+bool procesar_comando(sistema_t* sistema, char* comando[]) {
 	bool ok = false;
-	char** comando = split(entrada, ' ');
 	if (strcmp(comando[0], "agregar_archivo") == 0){
 		if (!cant_parametros_correcta(comando, 2)) return false;
 		ok = agregar_archivo(sistema, comando);
@@ -147,7 +145,6 @@ bool procesar_comando(sistema_t* sistema, char* entrada) {
 		if (!cant_parametros_correcta(comando, 3)) return false;
 		ok = borrar(sistema, comando);
 	}
-	free_strv(comando);
 	return ok;
 }
 
@@ -160,11 +157,17 @@ int main(void) {
 	while ((cant = getline(&entrada, &tam, stdin)) != EOF) {
 		if (entrada[cant-1] == '\n')
 			entrada[cant-1] = '\0';
-		if (procesar_comando(sistema, entrada)) {
+		if (cant<1){
+			fprintf(stderr, "Error en comando \n");
+			continue;
+		}
+		char** comando = split(entrada, ' ');
+		if (procesar_comando(sistema, comando)) {
 			printf("OK\n");
 		} else {
-			fprintf(stderr, "Error en comando %s\n", entrada);
+			fprintf(stderr, "Error en comando %s\n", comando[0]);
 		}
+		free_strv(comando);
 	}
 	free(entrada);
 	sistema_destruir(sistema);
