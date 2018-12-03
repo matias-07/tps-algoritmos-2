@@ -10,7 +10,7 @@ VUELOS = 2
 
 def listar_operaciones():
 	"""Muestra por pantalla todas las operaciones disponibles"""
-	operaciones = ["camino_mas", "nueva_aerolinea", "vacaciones"]
+	operaciones = ["camino_mas", "camino_escalas", "nueva_aerolinea", "vacaciones"]
 	for op in operaciones:
 		print(op)
 
@@ -38,24 +38,34 @@ def obtener_vuelos(grafo, ruta_vuelos):
 			pesos = (int(tiempo), int(precio), int(vuelos))
 			grafo.agregar_arista(aeropuerto_i, aeropuerto_j, pesos)
 
+def get_camino_minimo(grafo, origen, destino, peso=None):
+	"""Llama a la funcion para obtener el camino minimo correspondiente segun
+	si se le pasa un peso o no"""
+	if peso == None: return b.escalas_minimas_bfs(grafo, origen, destino)
+	return b.obtener_camino_minimo(grafo, peso, origen, destino)
+
 def camino_minimo(grafo, ciudades, parametros):
 	"""Recibe un grafo, un diccionario ciudad: lista_aeropuertos, y una lista
-	de parámetros con un peso, una ciudad origen y destino. Imprime un camino
-	mínimo desde el origen hasta el destino en términos del peso pasado.
+	de parámetros. Imprime un camino mínimo desde el origen hasta el destino.
 	Devuelve un booleano indicando si el comando se ejecutó correctamente."""
-	if len(parametros) != 3:
+	if len(parametros) == 3:
+		peso, ciudad_origen, ciudad_destino = parametros
+		if peso != "barato" and peso != "rapido":
+			return False
+		if peso == "rapido": peso = TIEMPO
+		if peso == "barato": peso = PRECIO
+	elif len(parametros) == 2:
+		ciudad_origen, ciudad_destino = parametros
+		peso = None
+	else:
 		return False
-	peso, ciudad_origen, ciudad_destino = parametros
-	if peso != "barato" and peso != "rapido":
-		return False
-	if peso == "rapido": peso = TIEMPO
-	if peso == "barato": peso = PRECIO
+
 	if ciudad_origen not in ciudades or ciudad_destino not in ciudades:
 		return False
 	camino, distancia = None, None
 	for origen in ciudades[ciudad_origen]:
 		for destino in ciudades[ciudad_destino]:
-			c, d = b.obtener_camino_minimo(grafo, peso, origen, destino)
+			c, d = get_camino_minimo(grafo, origen, destino, peso)
 			if not distancia or d < distancia:
 				camino, distancia = c, d
 	resultado = ""
@@ -81,7 +91,7 @@ def procesar_comando(grafo, ciudades, linea):
 	if len(comando) < 2:
 		return False
 	parametros = " ".join(comando[1:]).split(",")
-	if comando[0] == "camino_mas":
+	if comando[0] == "camino_mas" or comando[0] == "camino_escalas":
 		return camino_minimo(grafo, ciudades, parametros)
 	if comando[0] == "nueva_aerolinea":
 		return nueva_aerolinea(grafo, parametros)
