@@ -64,6 +64,64 @@ def escalas_minimas_bfs(grafo, origen, destino=None):
                 return reconstruir_camino(destino, padres), orden[w]
     return padres, orden
 
+def mergesort(arreglo):
+	"""Ordena un arreglo utilizando el ordenamiento mergesort"""
+	if len(arreglo) < 2:
+		return arreglo
+	medio = len(arreglo) // 2
+	izq = mergesort(arreglo[:medio])
+	der = mergesort(arreglo[medio:])
+	return merge(izq, der)
+
+def merge(arr1, arr2):
+	"""Intercala los elementos del arreglo1 y array2 de forma ordenada"""
+	i, j = 0, 0
+	resultado = []
+	while i < len(arr1) and j < len(arr2):
+		if arr1[i] < arr2[j]:
+			resultado.append(arr1[i])
+			i += 1
+		else:
+			resultado.append(arr2[j])
+			j += 1
+
+	resultado += arr1[i:]
+	resultado += arr2[j:]
+	return resultado
+
+def ordenar_vertices(distancias):
+	"""Recibe un grafo y un diccionario distancias del tipo
+	vertice:distancia y devuelve los vertices ordenados de
+	mayor a menor en una lista"""
+	vertices_ord = []
+	dist_aux = {} 
+	for v in distancias:
+		if not distancias[v] in dist_aux:
+			dist_aux[distancias[v]] = []
+		dist_aux[distancias[v]].append(v)
+	distancias_ord = mergesort(list(distancias.values()))
+	for dist in distancias_ord[::-1]:
+		vertices_ord.append(dist_aux[dist].pop())
+	return vertices_ord
+
+def betweeness_centrality(grafo):
+	"""Recibe un grafo y devuelve un diccionario cent de la forma
+	vertice:centralidad que sirve para encontrar el mas central"""
+	cent = {}
+	for v in grafo: cent[v] = 0
+	for v in grafo:
+		distancias, padres = obtener_camino_minimo(grafo, 0, v)
+		cent_aux = {}
+		for w in grafo: cent_aux[w] = 0
+		vertices_ordenados = ordenar_vertices(distancias)
+		for w in vertices_ordenados:
+			if w == v: continue
+			cent_aux[padres[w]] += 1 + cent_aux[w]
+		for w in grafo:
+			if w == v: continue
+			cent[w] += cent_aux[w]
+	return cent
+
 def obtener_viaje(grafo, origen, n):
     """Recibe un grafo, un origen y un número entero n.
     Devuelve un viaje de n lugares que comienza y finaliza

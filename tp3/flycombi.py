@@ -2,6 +2,7 @@ import sys
 import csv
 from grafo import Grafo
 import biblioteca as b
+from heap import Heap
 
 # Índice de cada peso de las aristas del grafo
 TIEMPO = 0
@@ -10,7 +11,7 @@ VUELOS = 2
 
 def listar_operaciones():
     """Muestra por pantalla todas las operaciones disponibles"""
-    operaciones = ["camino_mas", "camino_escalas", "nueva_aerolinea", "vacaciones"]
+    operaciones = ["camino_mas", "camino_escalas", "nueva_aerolinea", "vacaciones", "exportar_kml", "centralidad"]
     for op in operaciones:
         print(op)
 
@@ -71,6 +72,36 @@ def camino_minimo(grafo, ciudades, parametros):
     print(" -> ".join(camino))
     return camino
 
+def centralidad(grafo, parametros):
+    """Recibe un grafo y una lista de parametros que contiene
+    un entero n. Devuelve los n aeropuertos mas centrales"""
+    if len(parametros) != 1 or not parametros[0].isdigit():
+        return False
+    n = int(parametros[0])
+    centralidades = b.betweeness_centrality(grafo)
+    frecuencia_vuelos = {}
+    for v in centralidades:
+        frecuencia_vuelos[v] = 0
+        for w in grafo.obtener_adyacentes(v):
+            frecuencia_vuelos[v] += grafo.obtener_peso_union(v,w)[VUELOS]
+        centralidades[v] *= frecuencia_vuelos[v]
+    q = Heap()
+    cont = 0
+    for v in centralidades:
+        if cont < n:
+            q.encolar(v, centralidades[v])
+            cont += 1
+        elif centralidades[v] > centralidades[q.ver_prioridad_max()]:
+            q.desencolar()
+            q.encolar(v, centralidades[v])
+
+    n_mas_centrales = []
+    while not q.esta_vacio():
+        n_mas_centrales.append(q.desencolar())
+    n_mas_centrales.reverse()
+    print(", ".join(n_mas_centrales))
+    return True
+
 def nueva_aerolinea(grafo, parametros):
     pass
 
@@ -120,6 +151,8 @@ def procesar_comando(grafo, ciudades, linea, ultimo):
     parametros = " ".join(comando[1:]).split(",")
     if comando[0] == "camino_mas" or comando[0] == "camino_escalas":
         return camino_minimo(grafo, ciudades, parametros)
+    if comando[0] == "centralidad":
+        return centralidad(grafo, parametros)
     if comando[0] == "nueva_aerolinea":
         return nueva_aerolinea(grafo, parametros)
     if comando[0] == "vacaciones":
