@@ -47,14 +47,14 @@ class Heap:
 		y lo devuelve."""
 		nodo = heapq.heappop(self.datos)
 		return nodo.obtener_dato()
-	def ver_prioridad_max(self):
+
+	def ver_minimo(self):
 		"""Si el heap no está vacío, devuelve el elemento con
 		mayor prioridad"""
 		if self.esta_vacio():
 			raise ValueError("El heap está vacío")
-		nodo = heapq.heappop(self.datos)
+		nodo = self.datos[0]
 		dato = nodo.obtener_dato()
-		heapq.heappush(self.datos, nodo)
 		return dato
 
 	def esta_vacio(self):
