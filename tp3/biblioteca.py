@@ -1,3 +1,4 @@
+import random
 from grafo import Grafo
 from heap import Heap
 from cola import Cola
@@ -65,62 +66,63 @@ def escalas_minimas_bfs(grafo, origen, destino=None):
     return padres, orden
 
 def mergesort(arreglo):
-	"""Ordena un arreglo utilizando el ordenamiento mergesort"""
-	if len(arreglo) < 2:
-		return arreglo
-	medio = len(arreglo) // 2
-	izq = mergesort(arreglo[:medio])
-	der = mergesort(arreglo[medio:])
-	return merge(izq, der)
+    """Ordena un arreglo utilizando el ordenamiento mergesort"""
+    if len(arreglo) < 2:
+        return arreglo
+    medio = len(arreglo) // 2
+    izq = mergesort(arreglo[:medio])
+    der = mergesort(arreglo[medio:])
+    return merge(izq, der)
 
 def merge(arr1, arr2):
-	"""Intercala los elementos del arreglo1 y array2 de forma ordenada"""
-	i, j = 0, 0
-	resultado = []
-	while i < len(arr1) and j < len(arr2):
-		if arr1[i] < arr2[j]:
-			resultado.append(arr1[i])
-			i += 1
-		else:
-			resultado.append(arr2[j])
-			j += 1
+    """Intercala los elementos del arreglo1 y array2 de forma ordenada"""
+    i, j = 0, 0
+    resultado = []
+    while i < len(arr1) and j < len(arr2):
+        if arr1[i] < arr2[j]:
+            resultado.append(arr1[i])
+            i += 1
+        else:
+            resultado.append(arr2[j])
+            j += 1
 
-	resultado += arr1[i:]
-	resultado += arr2[j:]
-	return resultado
+    resultado += arr1[i:]
+    resultado += arr2[j:]
+    return resultado
 
 def ordenar_vertices(distancias):
-	"""Recibe un grafo y un diccionario distancias del tipo
-	vertice:distancia y devuelve los vertices ordenados de
-	mayor a menor en una lista"""
-	vertices_ord = []
-	dist_aux = {} 
-	for v in distancias:
-		if not distancias[v] in dist_aux:
-			dist_aux[distancias[v]] = []
-		dist_aux[distancias[v]].append(v)
-	distancias_ord = mergesort(list(distancias.values()))
-	for dist in distancias_ord[::-1]:
-		vertices_ord.append(dist_aux[dist].pop())
-	return vertices_ord
+    """Recibe un grafo y un diccionario distancias del tipo
+    vertice:distancia y devuelve los vertices ordenados de
+    mayor a menor en una lista"""
+    vertices_ord = []
+    dist_aux = {} 
+    for v in distancias:
+        if not distancias[v] in dist_aux:
+            dist_aux[distancias[v]] = []
+        dist_aux[distancias[v]].append(v)
+    distancias_ord = mergesort(list(distancias.values()))
+    for dist in distancias_ord[::-1]:
+        vertices_ord.append(dist_aux[dist].pop())
+    return vertices_ord
 
 def betweeness_centrality(grafo):
-	"""Recibe un grafo y devuelve un diccionario cent de la forma
-	vertice:centralidad que sirve para encontrar el mas central"""
-	cent = {}
-	for v in grafo: cent[v] = 0
-	for v in grafo:
-		distancias, padres = obtener_camino_minimo(grafo, 0, v)
-		cent_aux = {}
-		for w in grafo: cent_aux[w] = 0
-		vertices_ordenados = ordenar_vertices(distancias)
-		for w in vertices_ordenados:
-			if w == v: continue
-			cent_aux[padres[w]] += 1 + cent_aux[w]
-		for w in grafo:
-			if w == v: continue
-			cent[w] += cent_aux[w]
-	return cent
+    """Recibe un grafo y devuelve un diccionario cent de la forma
+    vertice:centralidad que sirve para encontrar el mas central"""
+    cent = {}
+    for v in grafo: cent[v] = 0
+    for v in grafo:
+        distancias, padres = obtener_camino_minimo(grafo, 0, v)
+        cent_aux = {}
+        for w in grafo: cent_aux[w] = 0
+        vertices_ordenados = sorted(distancias, key = lambda i: distancias[i])
+        #vertices_ordenados = ordenar_vertices(distancias)
+        for w in vertices_ordenados:
+            if w == v: continue
+            cent_aux[padres[w]] += 1 + cent_aux[w]
+        for w in grafo:
+            if w == v: continue
+            cent[w] += cent_aux[w]
+    return cent
 
 def obtener_viaje(grafo, origen, n):
     """Recibe un grafo, un origen y un número entero n.
@@ -154,10 +156,13 @@ def _obtener_viaje(grafo, origen, n, recorrido, visitados):
 def exportar_archivo_kml(grafo, recorrido, archivo):
     """Recibe una lista con un recorrido y un archivo, y exporta
     a dicho archivo el recorrido en formato kml."""
+    visitados = set()
     archivo.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     archivo.write('<kml xmlns="http://www.opengis.net/kml/2.2">\n')
     archivo.write('    <Document>\n')
     for i in range(len(recorrido)):
+        if recorrido[i] in visitados: continue
+        visitados.add(recorrido[i])
         coordenadas = grafo.obtener_dato(recorrido[i])
         archivo.write('        <Placemark>\n')
         archivo.write('            <name>{}</name>\n'.format(recorrido[i]))
@@ -175,3 +180,58 @@ def exportar_archivo_kml(grafo, recorrido, archivo):
         archivo.write('        </Placemark>\n')
     archivo.write('    </Document>\n')
     archivo.write('</kml>\n')
+
+def optimizar_rutas(grafo, peso):
+    """Recibe un grafo, aplica el algoritmo de Prim y devuelve un
+    árbol de tendido mínimo."""
+    vertice = grafo.obtener_vertice()
+    visitados = {vertice}
+    q = Heap()
+    for w in grafo.obtener_adyacentes(vertice):
+        q.encolar((vertice, w), grafo.obtener_peso_union(vertice, w)[peso])
+    arbol = Grafo()
+    for v in grafo:
+        arbol.agregar_vertice(v, grafo.obtener_dato(v))
+    while not q.esta_vacio():
+        v, w = q.desencolar()
+        if w in visitados:
+            continue
+        arbol.agregar_arista(v, w, grafo.obtener_peso_union(v, w))
+        visitados.add(w)
+        for u in grafo.obtener_adyacentes(w):
+            if u not in visitados:
+                q.encolar((w, u), grafo.obtener_peso_union(w, u)[peso])
+    return arbol
+
+def exportar_aerolinea(grafo, archivo, rutas=None):
+    """Recibe un grafo representando una aerolínea y  un archivo, y
+    exporta al archivo los vuelos existentes en la aerolínea, de la
+    forma aeropuerto_i,aeropuerto_j,tiempo,precio,cantidad_vuelos.
+    Adicionalmente recibe una lista y guarda en ella las rutas
+    entre vértices."""
+    visitados = set()
+    for v in grafo:
+        visitados.add(v)
+        for w in grafo.obtener_adyacentes(v):
+            if w in visitados: continue
+            tiempo, precio, vuelos = grafo.obtener_peso_union(v, w)
+            archivo.write(",".join([v, w, str(tiempo), str(precio), str(vuelos)])+"\n")
+            if rutas != None:
+                rutas.append(v)
+                rutas.append(w)
+
+def recorrer_mundo_optimo(grafo, ciudades, origen, peso):
+    """Recibe un grafo y un vértice origen. Devuelve una lista ordenada
+    de un recorrido por todas las ciudades del mundo con un costo mínimo."""
+    pass
+
+def obtener_centralidad_aproximada(grafo, n):
+    """Recibe un grafo y realiza random walks sobre él, y devuelve
+    la centralidad aproximada de cada vértice."""
+    centralidades = {}
+    for v in grafo:
+        centralidades[v] = 0
+    for v in grafo:
+        w = random.choice([w for w in grafo.obtener_adyacentes(v)])
+        centralidades[w] += 1
+    return sorted(centralidades, key = lambda x: centralidades[x], reverse = True)[:n]

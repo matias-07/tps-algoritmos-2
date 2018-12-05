@@ -9,10 +9,20 @@ TIEMPO = 0
 PRECIO = 1
 VUELOS = 2
 
+# Lista de operaciones disponibles
+OPERACIONES = [
+            "camino_mas",
+            "camino_escalas",
+            "nueva_aerolinea",
+            "vacaciones",
+            "exportar_kml",
+            "centralidad",
+            "centralidad_aprox"
+            ]
+
 def listar_operaciones():
     """Muestra por pantalla todas las operaciones disponibles"""
-    operaciones = ["camino_mas", "camino_escalas", "nueva_aerolinea", "vacaciones", "exportar_kml", "centralidad"]
-    for op in operaciones:
+    for op in OPERACIONES:
         print(op)
 
 def obtener_aeropuertos(grafo, ciudades, ruta_aeropuertos):
@@ -60,7 +70,6 @@ def camino_minimo(grafo, ciudades, parametros):
         peso = None
     else:
         return False
-
     if ciudad_origen not in ciudades or ciudad_destino not in ciudades:
         return False
     camino, distancia = None, None
@@ -91,7 +100,7 @@ def centralidad(grafo, parametros):
         if cont < n:
             q.encolar(v, centralidades[v])
             cont += 1
-        elif centralidades[v] > centralidades[q.ver_prioridad_max()]:
+        elif centralidades[v] > centralidades[q.ver_minimo()]:
             q.desencolar()
             q.encolar(v, centralidades[v])
 
@@ -103,7 +112,16 @@ def centralidad(grafo, parametros):
     return True
 
 def nueva_aerolinea(grafo, parametros):
-    pass
+    """Recibe un grafo y una lista de parámetros, que debe contener
+    la ruta a un archivo. Exporta las rutas que minimizan el costo
+    para la implementación de una nueva aerolínea."""
+    if len(parametros) != 1:
+        return False
+    arbol = b.optimizar_rutas(grafo, PRECIO)
+    rutas = []
+    with open(parametros[0], "w") as archivo:
+        b.exportar_aerolinea(arbol, archivo, rutas)
+    return rutas
 
 def vacaciones(grafo, ciudades, parametros):
     """Recibe un grafo y una lista de parámetros, que contiene una
@@ -124,6 +142,25 @@ def vacaciones(grafo, ciudades, parametros):
     print(" -> ".join(recorrido))
     return recorrido
 
+def recorrer_mundo(grafo, ciudades, parametros):
+    """Recibe un grafo, un diccionario de ciudades y una lista de parámetros.
+    Imprime un recorrido por todas las ciudades del mundo de modo que se
+    demore lo menos posible."""
+    pass
+
+def centralidad_aproximada(grafo, parametros):
+    """Recibe un grafo y una lista de parámetros, que debe contener
+    un número entero n. Imprime los n aeropuertos más importantes
+    aproximadamente. En caso de error, devuelve False."""
+    if len(parametros) != 1 or not parametros[0].isdigit():
+        return False
+    n = int(parametros[0])
+    if n > len(grafo):
+        return False
+    resultado = b.obtener_centralidad_aproximada(grafo, n)
+    print(", ".join(resultado))
+    return True
+
 def exportar_kml(grafo, parametros, recorrido):
     """Recibe un grafo, un recorrido y una lista de parámetros que contiene
     la ruta del archivo kml a exportar. Devuelve True en caso de ejecutarse
@@ -131,33 +168,35 @@ def exportar_kml(grafo, parametros, recorrido):
     devuelve False."""
     if len(parametros) != 1:
         return False
-    try:
-        with open(parametros[0], "w") as archivo:
-            b.exportar_archivo_kml(grafo, recorrido, archivo)
-        return True
-    except:
+    if recorrido is True or recorrido is False:
         return False
+    with open(parametros[0], "w") as archivo:
+        b.exportar_archivo_kml(grafo, recorrido, archivo)
+    return True
 
 def procesar_comando(grafo, ciudades, linea, ultimo):
     """Recibe un grafo, un diccionario de ciudades con todos los
     datos disponibles y una linea y procesa los comandos correspondientes.
     Devuelve True en caso de éxito, False en caso de error."""
-    comando = linea.rstrip("\n").split(" ")
-    if comando[0] == "listar_operaciones":
+    entrada = linea.rstrip("\n").split(" ")
+    comando = entrada[0]
+    if comando == "listar_operaciones":
         listar_operaciones()
         return True
-    if len(comando) < 2:
+    if len(entrada) < 2:
         return False
-    parametros = " ".join(comando[1:]).split(",")
-    if comando[0] == "camino_mas" or comando[0] == "camino_escalas":
+    parametros = " ".join(entrada[1:]).split(",")
+    if comando == "camino_mas" or comando == "camino_escalas":
         return camino_minimo(grafo, ciudades, parametros)
-    if comando[0] == "centralidad":
+    if comando == "centralidad":
         return centralidad(grafo, parametros)
-    if comando[0] == "nueva_aerolinea":
+    if comando == "centralidad_aprox":
+        return centralidad_aproximada(grafo, parametros)
+    if comando == "nueva_aerolinea":
         return nueva_aerolinea(grafo, parametros)
-    if comando[0] == "vacaciones":
+    if comando == "vacaciones":
         return vacaciones(grafo, ciudades, parametros)
-    if comando[0] == "exportar_kml":
+    if comando == "exportar_kml":
         return exportar_kml(grafo, parametros, ultimo)
     return False
 
@@ -170,7 +209,7 @@ def main():
     ciudades = {}
     obtener_aeropuertos(grafo, ciudades, ruta_aeropuertos)
     obtener_vuelos(grafo, ruta_vuelos)
-    ultimo = None
+    ultimo = False
     for linea in sys.stdin:
         ultimo = procesar_comando(grafo, ciudades, linea, ultimo)
         if ultimo:
