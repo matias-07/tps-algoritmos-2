@@ -66,6 +66,11 @@ class Grafo:
         """Devuelve un vértice aleatorio del grafo."""
         return choice(list(self.vertices.keys()))
 
+    def obtener_dato(self, clave):
+        """Recibe la clave asociada a un vértice del grafo y
+        devuelve su dato."""
+        return self.vertices[clave].obtener_valor()
+
     def obtener_peso_union(self, clave1, clave2):
         """Recibe dos claves de vértices en el grafo y devuelve
         el peso de la arista que los conecta."""
@@ -77,12 +82,7 @@ class Grafo:
         clave_vertice: peso."""
         return self.vertices[clave].obtener_adyacentes()
 
-    def cantidad_aristas(self):
-        """Devuelve la cantidad de aristas en el grafo."""
-        return self.numero_aristas
-
-    def cantidad_vertices(self):
-        """Devuelve la cantidad de vértices en el grafo."""
+    def __len__(self):
         return self.numero_vertices
 
     def __iter__(self):
