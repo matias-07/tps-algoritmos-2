@@ -2,7 +2,6 @@ import sys
 import csv
 from grafo import Grafo
 import biblioteca as b
-from heap import Heap
 
 # Índice de cada peso de las aristas del grafo
 TIEMPO = 0
@@ -17,7 +16,8 @@ OPERACIONES = [
             "vacaciones",
             "exportar_kml",
             "centralidad",
-            "centralidad_aprox"
+            "centralidad_aprox",
+            "pagerank"
             ]
 
 def listar_operaciones():
@@ -94,21 +94,32 @@ def centralidad(grafo, parametros):
         for w in grafo.obtener_adyacentes(v):
             frecuencia_vuelos[v] += grafo.obtener_peso_union(v,w)[VUELOS]
         centralidades[v] *= frecuencia_vuelos[v]
-    q = Heap()
-    cont = 0
-    for v in centralidades:
-        if cont < n:
-            q.encolar(v, centralidades[v])
-            cont += 1
-        elif centralidades[v] > centralidades[q.ver_minimo()]:
-            q.desencolar()
-            q.encolar(v, centralidades[v])
-
-    n_mas_centrales = []
-    while not q.esta_vacio():
-        n_mas_centrales.append(q.desencolar())
-    n_mas_centrales.reverse()
+    n_mas_centrales = b.obtener_n_mayores(centralidades, n, True)
     print(", ".join(n_mas_centrales))
+    return True
+
+def centralidad_aproximada(grafo, parametros):
+    """Recibe un grafo y una lista de parámetros, que debe contener
+    un número entero n. Imprime los n aeropuertos más importantes
+    aproximadamente. En caso de error, devuelve False."""
+    if len(parametros) != 1 or not parametros[0].isdigit():
+        return False
+    n = int(parametros[0])
+    centralidades = b.obtener_centralidad_aproximada(grafo) # multiplicar por frecuencias
+    resultado = b.obtener_n_mayores(centralidades, n, True)
+    print(", ".join(resultado))
+    return True
+
+def pagerank(grafo, parametros):
+    """Recibe un grafo y una lista de parámetros, que debe contener
+    un número entero n. Imprime los n aeropuertos más importantes
+    según el algoritmo de Pagerank. En caso de error, devuelve False."""
+    if len(parametros) != 1 or not parametros[0].isdigit():
+        return False
+    n = int(parametros[0])
+    centralidades = b.obtener_pagerank(grafo)
+    resultado = b.obtener_n_mayores(centralidades, n, True)
+    print(", ".join(resultado))
     return True
 
 def nueva_aerolinea(grafo, parametros):
@@ -148,19 +159,6 @@ def recorrer_mundo(grafo, ciudades, parametros):
     demore lo menos posible."""
     pass
 
-def centralidad_aproximada(grafo, parametros):
-    """Recibe un grafo y una lista de parámetros, que debe contener
-    un número entero n. Imprime los n aeropuertos más importantes
-    aproximadamente. En caso de error, devuelve False."""
-    if len(parametros) != 1 or not parametros[0].isdigit():
-        return False
-    n = int(parametros[0])
-    if n > len(grafo):
-        return False
-    resultado = b.obtener_centralidad_aproximada(grafo, n)
-    print(", ".join(resultado))
-    return True
-
 def exportar_kml(grafo, parametros, recorrido):
     """Recibe un grafo, un recorrido y una lista de parámetros que contiene
     la ruta del archivo kml a exportar. Devuelve True en caso de ejecutarse
@@ -192,6 +190,8 @@ def procesar_comando(grafo, ciudades, linea, ultimo):
         return centralidad(grafo, parametros)
     if comando == "centralidad_aprox":
         return centralidad_aproximada(grafo, parametros)
+    if comando == "pagerank":
+        return pagerank(grafo, parametros)
     if comando == "nueva_aerolinea":
         return nueva_aerolinea(grafo, parametros)
     if comando == "vacaciones":

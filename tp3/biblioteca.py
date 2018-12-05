@@ -4,6 +4,7 @@ from heap import Heap
 from cola import Cola
 
 INFINITO = float("inf")
+D = 0.85 # Coeficiente de amortiguación para Pagerank
 
 def reconstruir_camino(destino, padres):
     """Devuelve una lista ordenada con el camino desde origen
@@ -225,7 +226,7 @@ def recorrer_mundo_optimo(grafo, ciudades, origen, peso):
     de un recorrido por todas las ciudades del mundo con un costo mínimo."""
     pass
 
-def obtener_centralidad_aproximada(grafo, n):
+def obtener_centralidad_aproximada(grafo):
     """Recibe un grafo y realiza random walks sobre él, y devuelve
     la centralidad aproximada de cada vértice."""
     centralidades = {}
@@ -234,4 +235,42 @@ def obtener_centralidad_aproximada(grafo, n):
     for v in grafo:
         w = random.choice([w for w in grafo.obtener_adyacentes(v)])
         centralidades[w] += 1
-    return sorted(centralidades, key = lambda x: centralidades[x], reverse = True)[:n]
+    return centralidades
+
+def obtener_pagerank(grafo):
+    """Recibe un grafo, aplica el algoritmo de Pagerank y devuelve
+    un diccionario con la forma vertice: centralidad_pagerank."""
+    pagerank = {}
+    for v in grafo:
+        pagerank[v] = (1 - D) / len(grafo)
+    while True:
+        pagerank_actual = {}
+        for v in grafo:
+            pagerank_actual[v] = 0
+            for w in grafo.obtener_adyacentes(v):
+                pagerank_actual[v] += pagerank[w]/len(grafo.obtener_adyacentes(w))
+        converge = True
+        for p in pagerank:
+            if pagerank[p] != pagerank_actual[p]:
+                converge = False
+        pagerank = pagerank_actual
+        if converge: break
+    return pagerank
+
+def obtener_n_mayores(diccionario, n, reverse = False):
+    """Recibe un diccionario clave: valor y devuelve una lista con
+    las n mayores claves, ordenada descendente por defecto o
+    ascendentemente, con respecto a sus valores."""
+    q = Heap()
+    for clave in diccionario:
+        if len(q) < n:
+            q.encolar(clave, diccionario[clave])
+        elif diccionario[clave] > diccionario[q.ver_minimo()]:
+            q.desencolar()
+            q.encolar(clave, diccionario[clave])
+    resultado = []
+    while not q.esta_vacio():
+        resultado.append(q.desencolar())
+    if reverse:
+        resultado.reverse()
+    return resultado
