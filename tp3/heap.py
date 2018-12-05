@@ -61,3 +61,7 @@ class Heap:
 		"""Devuelve un booleano indicando si el Heap
 		está vacío o no."""
 		return len(self.datos) == 0
+
+	def __len__(self):
+		"""Devuelve la cantidad de elementos en el heap."""
+		return len(self.datos)
