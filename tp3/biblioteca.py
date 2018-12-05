@@ -5,6 +5,7 @@ from cola import Cola
 
 INFINITO = float("inf")
 D = 0.85 # Coeficiente de amortiguación para Pagerank
+E = 0.0001 # Diferencia de convergencia para Pagerank
 
 def reconstruir_camino(destino, padres):
     """Devuelve una lista ordenada con el camino desde origen
@@ -243,18 +244,17 @@ def obtener_pagerank(grafo):
     pagerank = {}
     for v in grafo:
         pagerank[v] = (1 - D) / len(grafo)
-    while True:
+    converge = False
+    while not converge:
         pagerank_actual = {}
+        converge = True
         for v in grafo:
             pagerank_actual[v] = 0
             for w in grafo.obtener_adyacentes(v):
-                pagerank_actual[v] += pagerank[w]/len(grafo.obtener_adyacentes(w))
-        converge = True
-        for p in pagerank:
-            if pagerank[p] != pagerank_actual[p]:
+                pagerank_actual[v] += D * pagerank[w]/len(grafo.obtener_adyacentes(w))
+            if abs(pagerank_actual[v] - pagerank[v]) > E:
                 converge = False
         pagerank = pagerank_actual
-        if converge: break
     return pagerank
 
 def obtener_n_mayores(diccionario, n, reverse = False):
