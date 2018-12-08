@@ -17,7 +17,8 @@ OPERACIONES = [
             "exportar_kml",
             "centralidad",
             "centralidad_aprox",
-            "pagerank"
+            "pagerank",
+            "itinerario"
             ]
 
 def listar_operaciones():
@@ -55,6 +56,18 @@ def get_camino_minimo(grafo, origen, destino, peso=None):
     if peso == None: return b.escalas_minimas_bfs(grafo, origen, destino)
     return b.obtener_camino_minimo(grafo, peso, origen, destino)
 
+def obtener_mejor_camino(grafo, ciudades, origen, destino, peso=None):
+    """Recibe un grafo, una ciudad origen y una destino, y opcionalmente
+    un peso. Calcula los caminos mínimos entre cada aeropuerto de la ciudad
+    origen y cada aeropuerto de la ciudad destino, y devuelve el mejor."""
+    camino, distancia = None, None
+    for aeropuerto_origen in ciudades[origen]:
+        for aeropuerto_destino in ciudades[destino]:
+            c, d = get_camino_minimo(grafo, aeropuerto_origen, aeropuerto_destino, peso)
+            if not distancia or d < distancia:
+                camino, distancia = c, d
+    return camino
+
 def camino_minimo(grafo, ciudades, parametros):
     """Recibe un grafo, un diccionario ciudad: lista_aeropuertos, y una lista
     de parámetros. Imprime un camino mínimo desde el origen hasta el destino.
@@ -72,12 +85,7 @@ def camino_minimo(grafo, ciudades, parametros):
         return False
     if ciudad_origen not in ciudades or ciudad_destino not in ciudades:
         return False
-    camino, distancia = None, None
-    for origen in ciudades[ciudad_origen]:
-        for destino in ciudades[ciudad_destino]:
-            c, d = get_camino_minimo(grafo, origen, destino, peso)
-            if not distancia or d < distancia:
-                camino, distancia = c, d
+    camino = obtener_mejor_camino(grafo, ciudades, ciudad_origen, ciudad_destino, peso)
     print(" -> ".join(camino))
     return camino
 
@@ -88,12 +96,7 @@ def centralidad(grafo, parametros):
         return False
     n = int(parametros[0])
     centralidades = b.betweeness_centrality(grafo)
-    frecuencia_vuelos = {}
-    for v in centralidades:
-        frecuencia_vuelos[v] = 0
-        for w in grafo.obtener_adyacentes(v):
-            frecuencia_vuelos[v] += grafo.obtener_peso_union(v,w)[VUELOS]
-        centralidades[v] *= frecuencia_vuelos[v]
+    b.obtener_frecuencias(grafo, centralidades, VUELOS)
     n_mas_centrales = b.obtener_n_mayores(centralidades, n, True)
     print(", ".join(n_mas_centrales))
     return True
@@ -105,7 +108,8 @@ def centralidad_aproximada(grafo, parametros):
     if len(parametros) != 1 or not parametros[0].isdigit():
         return False
     n = int(parametros[0])
-    centralidades = b.obtener_centralidad_aproximada(grafo) # multiplicar por frecuencias
+    centralidades = b.obtener_centralidad_aproximada(grafo)
+    b.obtener_frecuencias(grafo, centralidades, VUELOS)
     resultado = b.obtener_n_mayores(centralidades, n, True)
     print(", ".join(resultado))
     return True
@@ -113,11 +117,12 @@ def centralidad_aproximada(grafo, parametros):
 def pagerank(grafo, parametros):
     """Recibe un grafo y una lista de parámetros, que debe contener
     un número entero n. Imprime los n aeropuertos más importantes
-    según el algoritmo de Pagerank. En caso de error, devuelve False."""
+    según el algoritmo de Pagerank. En caso de error devuelve False."""
     if len(parametros) != 1 or not parametros[0].isdigit():
         return False
     n = int(parametros[0])
     centralidades = b.obtener_pagerank(grafo)
+    b.obtener_frecuencias(grafo, centralidades, VUELOS)
     resultado = b.obtener_n_mayores(centralidades, n, True)
     print(", ".join(resultado))
     return True
@@ -153,11 +158,36 @@ def vacaciones(grafo, ciudades, parametros):
     print(" -> ".join(recorrido))
     return recorrido
 
-def recorrer_mundo(grafo, ciudades, parametros):
-    """Recibe un grafo, un diccionario de ciudades y una lista de parámetros.
-    Imprime un recorrido por todas las ciudades del mundo de modo que se
-    demore lo menos posible."""
-    pass
+def itinerario(grafo, ciudades, parametros):
+    """Recibe un grafo, un diccionario de ciudades y una lista de
+    parámetros que debe contener una ruta a un archivo de itinerario.
+    Imprime el orden en que deben visitarse las ciudades y
+    los caminos mínimos de cada ciudad a la siguiente."""
+    if len(parametros) != 1:
+        return False
+    ruta = parametros[0]
+    g = Grafo(dirigido=True)
+    with open(ruta, "r") as archivo:
+        ciudades_a_visitar = archivo.readline().rstrip("\n").split(",")
+        for c in ciudades_a_visitar:
+            g.agregar_vertice(c, None)
+        reader = csv.reader(archivo)
+        for line in reader:
+            ciudad_i, ciudad_j = line
+            g.agregar_arista(ciudad_i, ciudad_j, None)
+    recorrido = b.orden_topologico(g)
+    print(", ".join(recorrido))
+    caminos_minimos = []
+    for i in range(len(recorrido) - 1):
+        origen = recorrido[i]
+        destino = recorrido[i + 1]
+        camino = obtener_mejor_camino(grafo, ciudades, origen, destino)
+        caminos_minimos.append(camino)
+    recorrido_completo = []
+    for camino in caminos_minimos:
+        print(" -> ".join(camino))
+        recorrido_completo += camino
+    return recorrido_completo
 
 def exportar_kml(grafo, parametros, recorrido):
     """Recibe un grafo, un recorrido y una lista de parámetros que contiene
@@ -196,6 +226,8 @@ def procesar_comando(grafo, ciudades, linea, ultimo):
         return nueva_aerolinea(grafo, parametros)
     if comando == "vacaciones":
         return vacaciones(grafo, ciudades, parametros)
+    if comando == "itinerario":
+        return itinerario(grafo, ciudades, parametros)
     if comando == "exportar_kml":
         return exportar_kml(grafo, parametros, ultimo)
     return False

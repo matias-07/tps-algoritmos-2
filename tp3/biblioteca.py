@@ -65,47 +65,7 @@ def escalas_minimas_bfs(grafo, origen, destino=None):
                 q.encolar(w)
             if w == destino:
                 return reconstruir_camino(destino, padres), orden[w]
-    return padres, orden
-
-def mergesort(arreglo):
-    """Ordena un arreglo utilizando el ordenamiento mergesort"""
-    if len(arreglo) < 2:
-        return arreglo
-    medio = len(arreglo) // 2
-    izq = mergesort(arreglo[:medio])
-    der = mergesort(arreglo[medio:])
-    return merge(izq, der)
-
-def merge(arr1, arr2):
-    """Intercala los elementos del arreglo1 y array2 de forma ordenada"""
-    i, j = 0, 0
-    resultado = []
-    while i < len(arr1) and j < len(arr2):
-        if arr1[i] < arr2[j]:
-            resultado.append(arr1[i])
-            i += 1
-        else:
-            resultado.append(arr2[j])
-            j += 1
-
-    resultado += arr1[i:]
-    resultado += arr2[j:]
-    return resultado
-
-def ordenar_vertices(distancias):
-    """Recibe un grafo y un diccionario distancias del tipo
-    vertice:distancia y devuelve los vertices ordenados de
-    mayor a menor en una lista"""
-    vertices_ord = []
-    dist_aux = {} 
-    for v in distancias:
-        if not distancias[v] in dist_aux:
-            dist_aux[distancias[v]] = []
-        dist_aux[distancias[v]].append(v)
-    distancias_ord = mergesort(list(distancias.values()))
-    for dist in distancias_ord[::-1]:
-        vertices_ord.append(dist_aux[dist].pop())
-    return vertices_ord
+    return orden, padres
 
 def betweeness_centrality(grafo):
     """Recibe un grafo y devuelve un diccionario cent de la forma
@@ -113,11 +73,10 @@ def betweeness_centrality(grafo):
     cent = {}
     for v in grafo: cent[v] = 0
     for v in grafo:
-        distancias, padres = obtener_camino_minimo(grafo, 0, v)
+        distancias, padres = escalas_minimas_bfs(grafo, v)
         cent_aux = {}
         for w in grafo: cent_aux[w] = 0
-        vertices_ordenados = sorted(distancias, key = lambda i: distancias[i])
-        #vertices_ordenados = ordenar_vertices(distancias)
+        vertices_ordenados = sorted(distancias, key=lambda i: distancias[i], reverse=True)
         for w in vertices_ordenados:
             if w == v: continue
             cent_aux[padres[w]] += 1 + cent_aux[w]
@@ -125,6 +84,47 @@ def betweeness_centrality(grafo):
             if w == v: continue
             cent[w] += cent_aux[w]
     return cent
+
+def obtener_centralidad_aproximada(grafo):
+    """Recibe un grafo y realiza random walks sobre él, y devuelve
+    la centralidad aproximada de cada vértice."""
+    centralidades = {}
+    for v in grafo:
+        centralidades[v] = 0
+    for v in grafo:
+        w = random.choice([w for w in grafo.obtener_adyacentes(v)])
+        centralidades[w] += 1
+    return centralidades
+
+def obtener_pagerank(grafo):
+    """Recibe un grafo, aplica el algoritmo de Pagerank y devuelve
+    un diccionario con la forma vertice: centralidad_pagerank."""
+    pagerank = {}
+    for v in grafo:
+        pagerank[v] = (1 - D) / len(grafo)
+    converge = False
+    while not converge:
+        pagerank_actual = {}
+        converge = True
+        for v in grafo:
+            pagerank_actual[v] = 0
+            for w in grafo.obtener_adyacentes(v):
+                pagerank_actual[v] += D * pagerank[w]/len(grafo.obtener_adyacentes(w))
+            if abs(pagerank_actual[v] - pagerank[v]) > E:
+                converge = False
+        pagerank = pagerank_actual
+    return pagerank
+
+def obtener_frecuencias(grafo, centralidades, peso):
+    """Recibe un grafo, un diccionario de centralidades y el índice
+    del peso que contiene la cantidad de vuelos entre un aeropuerto y otro,
+    y multiplica la centralidad de cada vértice por su frecuencia."""
+    frecuencias = {}
+    for v in centralidades:
+        frecuencias[v] = 0
+        for w in grafo.obtener_adyacentes(v):
+            frecuencias[v] += grafo.obtener_peso_union(v, w)[peso]
+        centralidades[v] *= frecuencias[v]
 
 def obtener_viaje(grafo, origen, n):
     """Recibe un grafo, un origen y un número entero n.
@@ -222,41 +222,6 @@ def exportar_aerolinea(grafo, archivo, rutas=None):
                 rutas.append(v)
                 rutas.append(w)
 
-def recorrer_mundo_optimo(grafo, ciudades, origen, peso):
-    """Recibe un grafo y un vértice origen. Devuelve una lista ordenada
-    de un recorrido por todas las ciudades del mundo con un costo mínimo."""
-    pass
-
-def obtener_centralidad_aproximada(grafo):
-    """Recibe un grafo y realiza random walks sobre él, y devuelve
-    la centralidad aproximada de cada vértice."""
-    centralidades = {}
-    for v in grafo:
-        centralidades[v] = 0
-    for v in grafo:
-        w = random.choice([w for w in grafo.obtener_adyacentes(v)])
-        centralidades[w] += 1
-    return centralidades
-
-def obtener_pagerank(grafo):
-    """Recibe un grafo, aplica el algoritmo de Pagerank y devuelve
-    un diccionario con la forma vertice: centralidad_pagerank."""
-    pagerank = {}
-    for v in grafo:
-        pagerank[v] = (1 - D) / len(grafo)
-    converge = False
-    while not converge:
-        pagerank_actual = {}
-        converge = True
-        for v in grafo:
-            pagerank_actual[v] = 0
-            for w in grafo.obtener_adyacentes(v):
-                pagerank_actual[v] += D * pagerank[w]/len(grafo.obtener_adyacentes(w))
-            if abs(pagerank_actual[v] - pagerank[v]) > E:
-                converge = False
-        pagerank = pagerank_actual
-    return pagerank
-
 def obtener_n_mayores(diccionario, n, reverse = False):
     """Recibe un diccionario clave: valor y devuelve una lista con
     las n mayores claves, ordenada descendente por defecto o
@@ -265,7 +230,7 @@ def obtener_n_mayores(diccionario, n, reverse = False):
     for clave in diccionario:
         if len(q) < n:
             q.encolar(clave, diccionario[clave])
-        elif diccionario[clave] > diccionario[q.ver_minimo()]:
+        elif diccionario[clave] >= diccionario[q.ver_minimo()]:
             q.desencolar()
             q.encolar(clave, diccionario[clave])
     resultado = []
@@ -274,3 +239,24 @@ def obtener_n_mayores(diccionario, n, reverse = False):
     if reverse:
         resultado.reverse()
     return resultado
+
+def orden_topologico(grafo):
+    """Recibe un grafo dirigido y devuelve una lista con un
+    ordenamiento topológico de los vértices del mismo."""
+    visitados = set()
+    resultado = []
+    for v in grafo:
+        if v in visitados:
+            continue
+        _orden_topologico(grafo, v, resultado, visitados)
+    resultado.reverse()
+    return resultado
+
+def _orden_topologico(grafo, origen, lista, visitados):
+    """Función auxiliar para orden_topologico."""
+    visitados.add(origen)
+    for v in grafo.obtener_adyacentes(origen):
+        if v in visitados:
+            continue
+        _orden_topologico(grafo, v, lista, visitados)
+    lista.append(origen)
