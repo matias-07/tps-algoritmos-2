@@ -33,13 +33,13 @@ class Vertice:
         return self.valor
 
 class Grafo:
-    """Implementación de la clase grafo no dirigido."""
+    """Implementación de la clase grafo."""
 
-    def __init__(self):
+    def __init__(self, dirigido=False):
         """Constructor de la clase Grafo."""
         self.vertices = {}
         self.numero_vertices = 0
-        self.numero_aristas = 0
+        self.es_dirigido = dirigido
 
     def agregar_vertice(self, clave, valor):
         """Recibe una clave y un valor, y los agrega al grafo,
@@ -53,8 +53,8 @@ class Grafo:
         Grafo y agrega una arista entre ellos, con el peso
         pasado."""
         self.vertices[clave1].agregar_adyacente(clave2, peso)
-        self.vertices[clave2].agregar_adyacente(clave1, peso)
-        self.numero_aristas += 1
+        if not self.es_dirigido:
+            self.vertices[clave2].agregar_adyacente(clave1, peso)
 
     def estan_conectados(self, clave1, clave2):
         """Recibe dos claves de vértices en el grafo y
@@ -83,6 +83,7 @@ class Grafo:
         return self.vertices[clave].obtener_adyacentes()
 
     def __len__(self):
+        """Devuelve la cantidad de vértices del grafo."""
         return self.numero_vertices
 
     def __iter__(self):
