@@ -132,11 +132,15 @@ def obtener_viaje(grafo, origen, n):
     en origen."""
     recorrido = [origen]
     visitados = set()
-    if not _obtener_viaje(grafo, origen, n, recorrido, visitados):
+    distancias = {}
+    for v in grafo:
+        camino, distancia = escalas_minimas_bfs(grafo, v, origen)
+        distancias[v] = distancia
+    if not _obtener_viaje(grafo, origen, n, recorrido, visitados, distancias):
         return None
     return recorrido
 
-def _obtener_viaje(grafo, origen, n, recorrido, visitados):
+def _obtener_viaje(grafo, origen, n, recorrido, visitados, distancias):
     """Función auxiliar para obtener un viaje de n lugares."""
     ultimo = recorrido[-1]
     if len(recorrido) == n:
@@ -144,12 +148,17 @@ def _obtener_viaje(grafo, origen, n, recorrido, visitados):
             return False
         recorrido.append(origen)
         return True
+    if distancias[ultimo] >= n - len(recorrido) + 1:
+        # Si la distancia mínima (en escalas) es mayor a la cantidad
+        # de lugares restantes para completar el recorrido,
+        # no va a haber solución por este camino
+        return False
     for v in grafo.obtener_adyacentes(ultimo):
         if v in visitados:
             continue
         recorrido.append(v)
         visitados.add(v)
-        if _obtener_viaje(grafo, origen, n, recorrido, visitados):
+        if _obtener_viaje(grafo, origen, n, recorrido, visitados, distancias):
             return True
         recorrido.pop()
         visitados.remove(v)

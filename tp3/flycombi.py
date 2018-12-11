@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import sys
 import csv
 from grafo import Grafo
@@ -13,7 +14,6 @@ OPERACIONES = [
             "camino_mas",
             "camino_escalas",
             "nueva_aerolinea",
-            "vacaciones",
             "exportar_kml",
             "centralidad",
             "centralidad_aprox",
@@ -137,6 +137,7 @@ def nueva_aerolinea(grafo, parametros):
     rutas = []
     with open(parametros[0], "w") as archivo:
         b.exportar_aerolinea(arbol, archivo, rutas)
+    print("OK")
     return rutas
 
 def vacaciones(grafo, ciudades, parametros):
@@ -200,6 +201,7 @@ def exportar_kml(grafo, parametros, recorrido):
         return False
     with open(parametros[0], "w") as archivo:
         b.exportar_archivo_kml(grafo, recorrido, archivo)
+    print("OK")
     return True
 
 def procesar_comando(grafo, ciudades, linea, ultimo):
@@ -244,9 +246,7 @@ def main():
     ultimo = False
     for linea in sys.stdin:
         ultimo = procesar_comando(grafo, ciudades, linea, ultimo)
-        if ultimo:
-            print("OK")
-        else:
+        if not ultimo:
             print("ERROR")
 
 main()
